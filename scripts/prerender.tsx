@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { prerenderPaths } from '../src/app/routes';
@@ -107,6 +107,26 @@ function hoistMetadata(shell: string, body: string): { head: string; body: strin
   return { head, body: stripped };
 }
 
+/**
+ * Preloads the font that renders the headline.
+ *
+ * The metric-matched fallback keeps the swap from reflowing the page, but not
+ * swapping at all is better still — and unlike the fallback, a preload does
+ * not depend on which fonts the visitor's machine happens to have. The
+ * filename is content-hashed by Vite, so it is discovered from the build
+ * output rather than hardcoded.
+ */
+async function fontPreloadTag(): Promise<string> {
+  const assets = await readdir(join(DIST, 'assets'));
+  const latin = assets.find(
+    (file) => file.startsWith('inter-latin-wght-normal') && file.endsWith('.woff2'),
+  );
+
+  if (latin === undefined) return '';
+
+  return `<link rel="preload" as="font" type="font/woff2" href="/assets/${latin}" crossorigin />`;
+}
+
 async function main(): Promise<void> {
   const shell = await readFile(SHELL, 'utf8');
 
@@ -120,12 +140,15 @@ async function main(): Promise<void> {
   }
 
   const paths = prerenderPaths();
+  const preload = await fontPreloadTag();
 
   for (const path of paths) {
     const rendered = await renderRouteToHtml(path);
     const { head, body } = hoistMetadata(shell, rendered);
 
-    const html = head
+    const withPreload = preload === '' ? head : head.replace('</head>', `  ${preload}\n  </head>`);
+
+    const html = withPreload
       .replace('<html lang="en"', `<html lang="en" ${PRERENDERED_ATTRIBUTE}="${path}"`)
       .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
 

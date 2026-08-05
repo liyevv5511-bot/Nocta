@@ -13,12 +13,16 @@
  * measured a CLS of 0.18 against a 0.05 budget. Overriding the fallback's
  * metrics to match Inter means the swap changes the glyphs and nothing else.
  *
- * The values are the standard Inter-against-Arial adjustments; `local()` keeps
- * it free, since the fallback is already on the machine.
+ * The values are the standard Inter-against-Arial adjustments. Several
+ * `local()` sources are listed rather than one: `Arial` alone resolves to
+ * nothing on Linux, which is where CI runs — the fallback silently did not
+ * apply and CI kept reporting the pre-fix layout shift. Liberation Sans and
+ * DejaVu Sans are the Ubuntu equivalents, and Liberation is metrically
+ * compatible with Arial by design.
  */
 @font-face {
   font-family: 'Inter Fallback';
-  src: local('Arial');
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans'), local('DejaVu Sans');
   size-adjust: 107%;
   ascent-override: 90%;
   descent-override: 22.43%;
