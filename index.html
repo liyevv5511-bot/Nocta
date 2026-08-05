@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      Pre-hydration title only. Everything route-specific — description,
+      canonical, Open Graph, Twitter — is rendered by <Seo> and hoisted by
+      React 19. Declaring those here as well produced two canonical links per
+      page, which is worse than having none.
+    -->
+    <title>Nocta — AI travel planning that reads like a local wrote it</title>
+
+    <!--
+      Theme, applied before first paint.
+
+      This script is intentionally blocking and intentionally inline. Any other
+      arrangement — a module, a deferred script, a React effect — paints the
+      default theme first and then corrects it, which is the white flash every
+      dark-mode site has and nobody wants. It must stay small enough that
+      blocking on it is free.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('nocta.theme');
+          var pref =
+            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var resolved =
+            pref === 'system'
+              ? window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark'
+              : pref;
+          var root = document.documentElement;
+          root.dataset.theme = resolved;
+          root.style.colorScheme = resolved;
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute('content', resolved === 'dark' ? '#050608' : '#fbfbfc');
+        } catch (error) {
+          /* Storage blocked — the dark default in the markup already applies. */
+        }
+      })();
+    </script>
+
+    <meta name="theme-color" content="#050608" />
+    <meta name="color-scheme" content="dark light" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Nocta",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Web",
+        "description": "AI travel planning with real venues, walking times and an editable itinerary.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 3rem; max-width: 40rem; margin: 0 auto; font-family: system-ui">
+        <h1>Nocta needs JavaScript</h1>
+        <p>
+          The planner streams an itinerary as it is generated and lets you rearrange it on a map,
+          which is not something we can deliver as static markup. Enable JavaScript to continue.
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

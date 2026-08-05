@@ -1,0 +1,332 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------ */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--border-subtle);
+  }
+
+  html {
+    /* Lenis drives scrolling; native smooth-scroll on top of it double-eases. */
+    scroll-behavior: auto;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    letter-spacing: var(--text-body--letter-spacing);
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+
+  /* Every number in the product is a figure in a table of figures — prices,
+   * durations, distances, ratings. Proportional digits make columns jitter. */
+  .tabular,
+  time,
+  data,
+  output,
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Only for elements that manage focus themselves (dialogs, listboxes). */
+  [data-focus-unstyled]:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: var(--accent-muted);
+    color: var(--text-primary);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: var(--radius-pill);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+    background-clip: content-box;
+  }
+
+  dialog::backdrop {
+    background: oklch(0% 0 0 / 0.55);
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------------ */
+
+@layer utilities {
+  .container-content {
+    width: 100%;
+    max-width: var(--width-content);
+    margin-inline: auto;
+    padding-inline: var(--space-gutter);
+  }
+
+  .section-y {
+    padding-block: var(--space-section);
+  }
+
+  /* The glass material. Four ingredients, all required:
+   *   1. blur + saturate backdrop  → the refraction
+   *   2. turbulence noise overlay  → kills the plastic look of flat blur
+   *   3. gradient border via mask-composite → the lit top edge
+   *   4. inset highlight shadow    → thickness
+   * Applied as one class so the recipe cannot drift between components. */
+  .glass {
+    position: relative;
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow: var(--glass-highlight), var(--shadow-md);
+    isolation: isolate;
+  }
+
+  .glass-strong {
+    background-color: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--blur-glass-strong)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--blur-glass-strong)) saturate(var(--glass-saturate));
+  }
+
+  /* Gradient hairline border. A plain 1px border cannot fade around the
+   * corner; masking a gradient-filled pseudo-element can. */
+  .glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      145deg,
+      var(--glass-border-from),
+      var(--glass-border-to) 45%,
+      var(--glass-border-from) 100%
+    );
+    -webkit-mask:
+      linear-gradient(oklch(0% 0 0)) content-box,
+      linear-gradient(oklch(0% 0 0));
+    mask:
+      linear-gradient(oklch(0% 0 0)) content-box,
+      linear-gradient(oklch(0% 0 0));
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Fractal noise, inlined as a data URI so it costs no request and cannot
+   * 404. `baseFrequency` at 0.9 gives grain rather than clouds. */
+  .glass::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: var(--glass-noise-opacity);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .glass > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Text that reads as a lit gradient. Kept as a utility because the fallback
+   * colour matters: if background-clip fails the text must not vanish. */
+  .text-gradient {
+    color: var(--accent);
+    background: linear-gradient(
+      120deg,
+      var(--text-primary) 10%,
+      var(--accent) 55%,
+      var(--accent-alt) 95%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  @supports (-webkit-background-clip: text) or (background-clip: text) {
+    .text-gradient {
+      color: transparent;
+    }
+  }
+
+  .hairline-x {
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      var(--border-default) 20%,
+      var(--border-default) 80%,
+      transparent
+    );
+    block-size: 1px;
+  }
+
+  /* Ambient aurora field used behind the hero and section transitions. */
+  .aurora-field {
+    background-image:
+      radial-gradient(60% 55% at 18% 12%, var(--ambient-1), transparent 70%),
+      radial-gradient(55% 50% at 82% 28%, var(--ambient-2), transparent 68%),
+      radial-gradient(48% 45% at 50% 92%, var(--ambient-3), transparent 72%);
+  }
+
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, oklch(0% 0 0) 55%, transparent 100%);
+    mask-image: linear-gradient(to bottom, oklch(0% 0 0) 55%, transparent 100%);
+  }
+
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      oklch(0% 0 0) 6%,
+      oklch(0% 0 0) 94%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      oklch(0% 0 0) 6%,
+      oklch(0% 0 0) 94%,
+      transparent
+    );
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono-xs);
+    letter-spacing: var(--text-mono-xs--letter-spacing);
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Animation primitives shared by CSS-only surfaces (skeletons, spinners,
+ * ambient loops). Framer Motion owns everything component-level.
+ * ------------------------------------------------------------------------ */
+
+@keyframes nocta-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes nocta-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(2%, -3%, 0) scale(1.06);
+  }
+  66% {
+    transform: translate3d(-2%, 2%, 0) scale(0.97);
+  }
+}
+
+@keyframes nocta-pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--surface-hover);
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, oklch(100% 0 0 / 0.06), transparent);
+    animation: nocta-shimmer 1.6s var(--ease-in-out-soft) infinite;
+  }
+
+  .animate-drift {
+    animation: nocta-drift 26s var(--ease-in-out-soft) infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion — a hard fallback, not a softening. Anything that moves is
+ * expected to also be legible standing still; this rule is what proves it.
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton::after,
+  .animate-drift {
+    animation: none !important;
+  }
+}
