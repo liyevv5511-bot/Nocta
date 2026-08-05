@@ -1,5 +1,6 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
+import { createGzip } from 'node:zlib';
 import {
   createServer,
   request as httpRequest,
@@ -26,6 +27,11 @@ import { extname, join, normalize, resolve } from 'node:path';
  *   2. An extensionless path resolves to `<path>/index.html` when one exists.
  *      This is what makes prerendering visible to a visitor.
  *   3. Anything left over falls back to `index.html` for the client router.
+ *
+ * It also gzips text responses. That is not decoration: without it the
+ * Lighthouse job in CI measures an uncompressed payload, reports "enable text
+ * compression", and produces a performance number that no real host would
+ * ever give you.
  */
 
 const ROOT = resolve(process.cwd(), 'dist');
@@ -57,8 +63,17 @@ async function isFile(path: string): Promise<boolean> {
   }
 }
 
-function send(res: ServerResponse, status: number, path: string): void {
-  const type = MIME[extname(path)] ?? 'application/octet-stream';
+const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.json', '.svg', '.xml', '.txt']);
+
+function send(
+  res: ServerResponse,
+  status: number,
+  path: string,
+  acceptEncoding: string | string[],
+): void {
+  const extension = extname(path);
+  const type = MIME[extension] ?? 'application/octet-stream';
+  const gzip = COMPRESSIBLE.has(extension) && String(acceptEncoding).includes('gzip');
 
   res.writeHead(status, {
     'Content-Type': type,
@@ -66,9 +81,12 @@ function send(res: ServerResponse, status: number, path: string): void {
     // deploy leaves visitors on a stale shell pointing at deleted chunks.
     'Cache-Control': path.includes('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache',
     'X-Content-Type-Options': 'nosniff',
+    ...(gzip ? { 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' } : {}),
   });
 
-  createReadStream(path).pipe(res);
+  const file = createReadStream(path);
+  if (gzip) file.pipe(createGzip()).pipe(res);
+  else file.pipe(res);
 }
 
 /** Forwards `/api/*` to the planner, streaming the response body through. */
@@ -97,6 +115,7 @@ function proxyApi(req: IncomingMessage, res: ServerResponse): void {
 
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${String(PORT)}`);
+  const acceptEncoding = req.headers['accept-encoding'] ?? '';
 
   if (url.pathname.startsWith('/api/')) {
     proxyApi(req, res);
@@ -115,20 +134,20 @@ const server = createServer((req, res) => {
 
   void (async () => {
     if (extname(requested) !== '') {
-      if (await isFile(candidate)) send(res, 200, candidate);
+      if (await isFile(candidate)) send(res, 200, candidate, acceptEncoding);
       else res.writeHead(404, { 'Content-Type': 'text/plain' }).end('Not found');
       return;
     }
 
     const indexFile = join(candidate, 'index.html');
     if (await isFile(indexFile)) {
-      send(res, 200, indexFile);
+      send(res, 200, indexFile, acceptEncoding);
       return;
     }
 
     // SPA fallback: 200, because the client router will render the right page
     // (including its own 404) and a hard 404 would break deep links.
-    send(res, 200, join(ROOT, 'index.html'));
+    send(res, 200, join(ROOT, 'index.html'), acceptEncoding);
   })();
 });
 

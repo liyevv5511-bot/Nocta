@@ -50,6 +50,14 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
+    <!--
+      Photography comes from a third-party origin, so the DNS lookup, TCP
+      handshake and TLS negotiation all sit in front of the first image byte.
+      Doing them during head parsing takes that off the critical path.
+    -->
+    <link rel="preconnect" href="https://picsum.photos" crossorigin />
+    <link rel="dns-prefetch" href="https://picsum.photos" />
+
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

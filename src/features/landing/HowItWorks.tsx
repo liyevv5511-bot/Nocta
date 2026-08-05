@@ -38,11 +38,17 @@ export function HowItWorks(): React.ReactElement {
     const steps = gsap.utils.toArray<HTMLElement>('[data-step]');
 
     steps.forEach((step) => {
+      // Position only, no opacity.
+      //
+      // Contrast is computed on the *composited* colour, so a paragraph at 55%
+      // opacity over a light canvas measures 2.6:1 however good the token is —
+      // a real failure, not a scoring quirk, and one a reader who never
+      // scrolls that far never recovers from. Sliding into place reads as a
+      // reveal without ever making the text harder to read.
       gsap.fromTo(
         step,
-        { opacity: 0.25, y: 40 },
+        { y: 40 },
         {
-          opacity: 1,
           y: 0,
           ease: 'power3.out',
           scrollTrigger: {

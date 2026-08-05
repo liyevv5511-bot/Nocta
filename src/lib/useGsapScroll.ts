@@ -1,5 +1,5 @@
 import type { gsap as GsapNamespace } from 'gsap';
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
@@ -33,6 +33,22 @@ interface ScrollTriggerApi {
 }
 
 let lenisBound = false;
+
+/**
+ * `useLayoutEffect` in the browser, `useEffect` during prerendering.
+ *
+ * The distinction is load-bearing, not stylistic. ScrollTrigger's `pin`
+ * restructures the DOM — it wraps the pinned element in a `pin-spacer` — so
+ * the context must be reverted *before* React removes that subtree. Cleanup
+ * from a passive effect runs after the mutation phase, by which point React
+ * has already tried to remove a node whose parent GSAP changed, and the route
+ * transition dies with `Failed to execute 'removeChild'`.
+ *
+ * Layout-effect cleanup runs during the mutation phase, before the removal.
+ * On the server there is no mutation phase and React warns about
+ * `useLayoutEffect`, hence the swap.
+ */
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 async function loadGsap(): Promise<{ gsap: Gsap; ScrollTrigger: ScrollTriggerApi }> {
   // Named imports on both: GSAP ships CommonJS, and its default export is the
@@ -84,10 +100,6 @@ function bindLenis(scrollTrigger: ScrollTriggerApi): void {
  * triggers behind, pinned sections stack, and the page ends up several
  * thousand pixels taller than it should be.
  *
- * `useEffect` rather than `useLayoutEffect`, now that the library arrives
- * asynchronously — there is nothing to measure synchronously before paint, and
- * `useLayoutEffect` warns during server rendering for no benefit.
- *
  * Under reduced motion nothing is loaded and nothing is registered. The
  * sections keep their natural document flow, which is what they are authored
  * to look like anyway.
@@ -104,7 +116,7 @@ export function useGsapContext(
   const buildRef = useRef(build);
   buildRef.current = build;
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (reducedMotion || !scope.current) return;
 
     let context: gsap.Context | null = null;
@@ -135,6 +147,6 @@ export function useGsapContext(
     // `build` is intentionally excluded — it is read through a ref so an
     // inline arrow at the call site does not tear down every trigger on
     // every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [scope, reducedMotion, ...dependencies]);
 }

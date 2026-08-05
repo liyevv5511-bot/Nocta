@@ -38,30 +38,17 @@ const SHELL = join(DIST, 'index.html');
 const PRERENDERED_ATTRIBUTE = 'data-prerendered';
 
 /**
- * Marks a hoisted metadata tag.
+ * Moves the metadata React rendered inline into `<head>`.
  *
- * These tags sit in `<head>`, outside the React root, so React never diffs
- * them — it simply renders its own copies on hydration and the document ends
- * up with two of everything, including two canonical links. `main.tsx`
- * removes anything carrying this attribute immediately before hydrating: the
- * prerendered copies exist for consumers that do not run JavaScript, and are
- * handed back to React for everyone else.
- */
-const META_MARKER = 'data-prerender-meta';
-
-/**
- * Copies the metadata React rendered inline into `<head>`.
+ * **Moves, not copies.** `app/Seo.tsx` renders these tags on the server only —
+ * on the client it renders nothing and writes the same tags into `<head>`
+ * imperatively. So stripping them from the body here is what makes the two
+ * sides agree: both render nothing there, and hydration matches.
  *
- * **Copies, not moves.** React 19 hoists `<title>`, `<meta>` and `<link>` to
- * the head in the browser, but a server render emits them where the component
- * sat — inside `#root`. Removing them from the body was the obvious first
- * implementation and it silently broke hydration: React expects to find the
- * nodes it rendered, does not, and throws the whole prerendered tree away.
- *
- * So both copies exist in the file. The head copy carries `data-prerender-meta`
- * and is what a crawler or link unfurler reads; `main.tsx` deletes it a moment
- * before hydrating, handing ownership back to React and leaving exactly one of
- * each tag in a live document.
+ * An earlier version copied instead, leaving the tags in the body for React to
+ * hydrate. React 19 then hoisted them to `<head>` on Chromium and left them in
+ * a `<div>` on WebKit — a document with the canonical link in two places, and
+ * a title that went stale after client navigation on Safari.
  *
  * Each tag family gets its own explicit pattern rather than one clever
  * alternation. The clever version matched the `>` of an opening `<title>` and
@@ -90,19 +77,16 @@ function isBuildAsset(tag: string): boolean {
   );
 }
 
-/** Inserts the marker attribute into a tag's opening bracket. */
-function markTag(tag: string): string {
-  return tag.replace(/^<([a-zA-Z]+)/, `<$1 ${META_MARKER}`);
-}
-
 function hoistMetadata(shell: string, body: string): { head: string; body: string } {
   const hoisted: string[] = [];
+  let stripped = body;
 
   for (const pattern of METADATA_PATTERNS) {
-    for (const match of body.match(pattern) ?? []) {
-      if (isBuildAsset(match)) continue;
-      hoisted.push(markTag(match));
-    }
+    stripped = stripped.replace(pattern, (match) => {
+      if (isBuildAsset(match)) return match;
+      hoisted.push(match);
+      return '';
+    });
   }
 
   // A route's own <title> replaces the shell's placeholder rather than being
@@ -120,8 +104,7 @@ function hoistMetadata(shell: string, body: string): { head: string; body: strin
     head = head.replace('</head>', `  ${rest.join('\n    ')}\n  </head>`);
   }
 
-  // The body is returned untouched — see the note above.
-  return { head, body };
+  return { head, body: stripped };
 }
 
 async function main(): Promise<void> {

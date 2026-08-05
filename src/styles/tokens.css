@@ -62,7 +62,9 @@
    * Fluid scale. Every step is clamp()-ed against the 360px…1440px viewport
    * band so there is never a "mobile stylesheet" for typography. */
 
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans:
+    'Inter Variable', 'Inter Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 
   --text-display-1: clamp(3rem, 1.42rem + 7.02vw, 7.5rem);
@@ -228,16 +230,20 @@
 
   --text-primary: var(--color-ink-950);
   --text-secondary: oklch(43% 0.016 264);
-  --text-tertiary: oklch(56% 0.016 264);
+  /* 50%, not 56%. The `.eyebrow` style renders this at 0.7rem, where AA wants
+     4.5:1 — 56% measured 4.2:1 on the light canvas and Lighthouse failed it. */
+  --text-tertiary: oklch(50% 0.016 264);
   --text-inverse: var(--color-ink-50);
 
   --border-subtle: oklch(12.8% 0.028 264 / 0.08);
   --border-default: oklch(12.8% 0.028 264 / 0.14);
   --border-strong: oklch(12.8% 0.028 264 / 0.24);
 
-  /* Darker accent steps: the aurora hue at 400 fails AA on white. */
-  --accent: var(--color-aurora-700);
-  --accent-hover: var(--color-aurora-600);
+  /* Darker accent steps: the aurora hue at 400 fails AA on white. Even the
+     700 step measured 3.9:1 as small text, so light mode uses its own value
+     rather than a step from the ramp. */
+  --accent: oklch(45% 0.115 194);
+  --accent-hover: var(--color-aurora-700);
   --accent-muted: oklch(49% 0.122 194 / 0.12);
   --accent-contrast: oklch(100% 0 0);
 

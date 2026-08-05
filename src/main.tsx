@@ -33,25 +33,6 @@ function wasPrerenderedForThisPath(): boolean {
 }
 
 /**
- * Hands the document's metadata back to React.
- *
- * The prerenderer copies each route's `<title>`/`<meta>`/`<link>` into
- * `<head>` so consumers that never run JavaScript still get them. Those copies
- * live outside the React root, so React renders its own set on top — two
- * canonical links, two descriptions, and a stale title that would win over
- * React's on the next client navigation.
- *
- * Unconditional, not only on the hydration path: a fallback-served document
- * carries *another* route's metadata, which is the case where leaving it in
- * place is most wrong.
- */
-function retirePrerenderedMetadata(): void {
-  for (const tag of document.querySelectorAll('[data-prerender-meta]')) {
-    tag.remove();
-  }
-}
-
-/**
  * Mounts the app.
  *
  * On a prerendered document the matching route module is awaited *before*
@@ -65,8 +46,6 @@ function retirePrerenderedMetadata(): void {
  * prerendered file — mounts fresh and keeps the boundary.
  */
 async function mount(root: HTMLElement): Promise<void> {
-  retirePrerenderedMetadata();
-
   if (!wasPrerenderedForThisPath() || !root.hasChildNodes()) {
     // Markup for a different route would otherwise sit in the DOM beneath the
     // new tree until React's first commit replaced it.

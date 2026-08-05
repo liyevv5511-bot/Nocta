@@ -146,8 +146,8 @@ Stated plainly rather than left for you to discover:
   are implemented and `WorldMap` accepts a `route` prop; there is no interface for assembling one.
 - **Hotel/restaurant ratings.** The venue catalogue has no rating field — inventing star ratings for
   real, named businesses is the kind of fake data this project is otherwise free of.
-- **Live URL and Lighthouse report.** The Lighthouse CI job and its budget assertions are configured
-  in `lighthouserc.json`; nothing has been deployed.
+- **A live URL.** The repository is deployable — `vercel.json`, the serverless planner and the
+  Lighthouse job are all configured — but the deploy itself is the repository owner's to make.
 
 ---
 
@@ -217,6 +217,33 @@ are different module ids, and listing only the former silently leaves the 130kb 
 entry chunk.
 
 ---
+
+## Lighthouse
+
+Measured against the production build, served the way a host serves it:
+
+```
+                        perf   a11y   best   seo    CLS     LCP
+/                       100    100    100    100    0.004   0.6s
+/plan                   100    100    100    100    0.011   0.6s
+/destination/lisbon      99    100    100    100    0.008   1.0s
+/styleguide             100    100    100    100    0      0.6s
+```
+
+CI asserts these rather than reporting them, and getting there meant fixing real defects rather
+than moving thresholds:
+
+- **CLS 0.18 → 0.004.** Inter loads asynchronously and swapped in with different metrics, reflowing
+  every line under it. A metric-matched `@font-face` fallback (`size-adjust`, `ascent-override`)
+  makes the swap change the glyphs and nothing else.
+- **Two contrast failures were real.** `--text-tertiary` measured 4.2:1 in light mode where the
+  `.eyebrow` style renders it at 0.7rem, and the light accent measured 3.9:1. Both were darkened.
+  The third was subtler: the pinned scroll section animated body text from `opacity: 0.25`, and
+  contrast is computed on the _composited_ colour — 2.6:1 for a paragraph a reader who never scrolls
+  that far never recovers. It animates position only now.
+- **A `<dl>` contained a stray `<p>`**, which invalidates the list and strips its semantics.
+- **The E2E harness was not compressing responses**, so CI measured an uncompressed payload and
+  reported a performance number no real host would give you.
 
 ## Testing
 

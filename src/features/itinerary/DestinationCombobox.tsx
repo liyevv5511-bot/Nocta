@@ -66,32 +66,33 @@ export function DestinationCombobox({
         className="mt-2 h-14 w-full rounded-lg border border-default bg-surface-sunken px-4 text-body-lg text-primary placeholder:text-tertiary"
       />
 
+      {/* A div rather than a <ul>: `role="listbox"` replaces the list
+          semantics, and an <li> inside it has no list to belong to. */}
       {open && suggestions.length > 0 ? (
-        <ul
+        <div
           id={listId}
           role="listbox"
           className="glass absolute inset-x-0 top-full z-20 mt-2 max-h-72 overflow-y-auto rounded-lg py-1.5"
         >
           {suggestions.map((city) => (
-            <li key={city.id}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={matched?.id === city.id}
-                onClick={() => {
-                  onChange(city.name);
-                  setOpen(false);
-                }}
-                className="flex w-full items-baseline justify-between gap-4 px-4 py-2.5 text-left transition-colors hover:bg-surface-hover"
-              >
-                <span className="font-medium text-primary">{city.name}</span>
-                <span className="text-sm text-tertiary">
-                  {city.country} · {formatCurrency(city.avgDailyCost, city.currency)}/day
-                </span>
-              </button>
-            </li>
+            <button
+              key={city.id}
+              type="button"
+              role="option"
+              aria-selected={matched?.id === city.id}
+              onClick={() => {
+                onChange(city.name);
+                setOpen(false);
+              }}
+              className="flex w-full items-baseline justify-between gap-4 px-4 py-2.5 text-left transition-colors hover:bg-surface-hover"
+            >
+              <span className="font-medium text-primary">{city.name}</span>
+              <span className="text-sm text-tertiary">
+                {city.country} · {formatCurrency(city.avgDailyCost, city.currency)}/day
+              </span>
+            </button>
           ))}
-        </ul>
+        </div>
       ) : null}
 
       {showMiss ? (

@@ -12,7 +12,7 @@
  * the blur-up placeholder and as the failure state.
  */
 
-const ORIGIN = 'https://picsum.photos';
+export const PHOTO_ORIGIN = 'https://picsum.photos';
 
 export interface PhotoOptions {
   width: number;
@@ -20,7 +20,10 @@ export interface PhotoOptions {
 }
 
 export function photo(seed: string, { width, height }: PhotoOptions): string {
-  return `${ORIGIN}/seed/${encodeURIComponent(seed)}/${String(width)}/${String(height)}`;
+  // `.webp` rather than the default JPEG: same provider, same URL shape,
+  // roughly a third off the bytes, and it removes Lighthouse's
+  // "serve images in next-gen formats" finding rather than muting it.
+  return `${PHOTO_ORIGIN}/seed/${encodeURIComponent(seed)}/${String(width)}/${String(height)}.webp`;
 }
 
 /** Standard sizes, so `srcSet` widths stay consistent across the app. */

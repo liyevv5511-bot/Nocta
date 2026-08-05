@@ -171,6 +171,13 @@ function buildJsonLd(city: City, venueCount: number): Record<string, unknown> {
   };
 }
 
+/**
+ * One figure in the description list.
+ *
+ * The note lives inside the `<dd>`, not beside it. A `<dl>` may only contain
+ * `<dt>`/`<dd>` groups — optionally wrapped in a `<div>` — so a sibling `<p>`
+ * makes the whole list invalid and strips its semantics for a screen reader.
+ */
 function Figure({
   label,
   value,
@@ -183,8 +190,10 @@ function Figure({
   return (
     <div>
       <dt className="text-mono-xs tracking-[0.09em] text-tertiary uppercase">{label}</dt>
-      <dd className="tabular mt-1.5 text-h2 text-primary">{value}</dd>
-      <p className="mt-1 text-sm text-tertiary">{note}</p>
+      <dd className="mt-1.5">
+        <span className="tabular block text-h2 text-primary">{value}</span>
+        <span className="mt-1 block text-sm text-tertiary">{note}</span>
+      </dd>
     </div>
   );
 }

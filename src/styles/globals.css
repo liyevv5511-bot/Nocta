@@ -5,6 +5,26 @@
  * Base
  * ------------------------------------------------------------------------ */
 
+/**
+ * Metric-matched fallback.
+ *
+ * Inter loads asynchronously and swaps in, and a swap between two fonts with
+ * different metrics reflows every line of text under it — which is where CI
+ * measured a CLS of 0.18 against a 0.05 budget. Overriding the fallback's
+ * metrics to match Inter means the swap changes the glyphs and nothing else.
+ *
+ * The values are the standard Inter-against-Arial adjustments; `local()` keeps
+ * it free, since the fallback is already on the machine.
+ */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial');
+  size-adjust: 107%;
+  ascent-override: 90%;
+  descent-override: 22.43%;
+  line-gap-override: 0%;
+}
+
 @layer base {
   *,
   *::before,

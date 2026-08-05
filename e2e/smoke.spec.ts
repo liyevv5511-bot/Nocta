@@ -129,6 +129,60 @@ test.describe('accessibility', () => {
  * later. This is what a link unfurler, a text browser, and a crawler that does
  * not execute scripts actually receive.
  */
+/**
+ * Client-side navigation *away from a prerendered page*.
+ *
+ * This is the case the suite missed for a long time: almost every other test
+ * either starts with `goto` or starts on a route with no prerendered file, so
+ * hydration was never followed by a navigation. Two real bugs lived in that
+ * gap — deleting head nodes React had adopted, and reverting GSAP's pinned
+ * layout after React had already removed the DOM. Both only ever surfaced on
+ * the second page.
+ */
+test.describe('navigation after hydration', () => {
+  for (const from of ['/', '/styleguide', '/destination/lisbon']) {
+    test(`navigates from ${from} to the planner without breaking`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+
+      await page.goto(from);
+      // Far enough for the pinned scroll section to have restructured the DOM.
+      // `window.scrollTo` rather than `mouse.wheel`: mobile WebKit has no
+      // wheel, and the point is to reach the scroll position, not to emulate
+      // the input that gets there.
+      await page.evaluate(() => {
+        window.scrollTo(0, 4000);
+      });
+      await page.waitForTimeout(600);
+
+      // The footer link rather than the header's: the main nav collapses into
+      // a menu below `md`, and this suite runs at both widths.
+      await page.getByRole('contentinfo').getByRole('link', { name: 'Plan a trip' }).click();
+
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the trip.');
+      expect(errors, `console errors navigating from ${from}`).toEqual([]);
+    });
+  }
+
+  test('metadata follows the route rather than staying on the first one', async ({ page }) => {
+    await page.goto('/destination/lisbon');
+    await expect(page).toHaveTitle(/Lisbon, Portugal/);
+
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Plan a trip' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the trip.');
+
+    await expect(page).toHaveTitle(/Plan a trip/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://nocta.travel/plan',
+    );
+  });
+});
+
 test.describe('prerendered HTML', () => {
   test.use({ javaScriptEnabled: false });
 
