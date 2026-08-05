@@ -286,8 +286,28 @@ interface, Framer's props) without catching anything real in this codebase.
 
 ## Deployment
 
-`vercel.json` and `netlify.toml` are both present: SPA fallback with hashed assets matched first (so
-a missing chunk 404s honestly rather than being served `index.html` with a JS content type),
-immutable caching on `/assets/*`, and the usual security headers.
+Push to `main` and Vercel builds it. `npm run build` runs the whole chain —
+`vite build → og → prerender → seo` — so the deployed output includes the prerendered routes, the
+Open Graph cards and a sitemap generated from the catalogue.
 
-The planner service deploys separately; point `NOCTA_API_ORIGIN` at it.
+**The planner ships with it.** `api/plan.ts`, `api/alternatives.ts` and `api/cities.ts` are
+serverless functions that consume the same `server/planStream.ts` generator the local Express
+service does. There is one implementation of the event sequence and one place to change when the
+mock becomes a real model — which is the whole reason the sequence was pulled out of the Express
+handler rather than ported to the platform.
+
+`api/plan.ts` streams a `ReadableStream` and honours `request.signal`, so cancelling a generation in
+the UI actually stops the function rather than leaving it composing days nobody will read.
+
+Routing rules, identical across `vercel.json`, `netlify.toml` and the E2E harness
+(`scripts/serve.ts`):
+
+1. A path with an extension is a file — served or 404, never rewritten to `index.html`. That
+   rewrite is how a missing JS chunk arrives as HTML and fails with a syntax error instead of a
+   clear 404.
+2. An extensionless path resolves to `<path>/index.html` when one exists. This is what makes
+   prerendering visible.
+3. Everything else falls back to `index.html` for the client router.
+
+Local development still runs two processes — `npm run dev` starts Vite and the Express planner on
+`:8787`, proxied through `/api`.

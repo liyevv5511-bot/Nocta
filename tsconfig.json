@@ -33,6 +33,7 @@
     "types": ["vite/client", "node", "@testing-library/jest-dom"]
   },
   "include": [
+    "api",
     "src",
     "server",
     "e2e",

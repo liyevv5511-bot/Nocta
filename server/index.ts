@@ -1,26 +1,14 @@
 import cors from 'cors';
 import express, { type Request, type Response } from 'express';
 
-import { CITIES, CITY_BY_ID, findCityByName } from '../src/data/cities';
-import { photo, PHOTO_SIZES } from '../src/data/images';
-import { getCityVenues } from '../src/data/venues';
+import { CITIES } from '../src/data/cities';
 import {
   AlternativesRequestSchema,
   PlanRequestSchema,
-  type ActivityBlock,
-  type ItineraryDay,
-  type PlanEvent,
   type PlanRequest,
 } from '../src/types/itinerary';
-import {
-  buildHighlights,
-  buildMeta,
-  buildSummary,
-  composeDay,
-  createPlannerState,
-  createRng,
-  statusMessages,
-} from './planner';
+import { buildAlternatives } from './alternatives';
+import { planEvents, toSseFrame } from './planStream';
 
 /**
  * The mock AI service.
@@ -31,7 +19,11 @@ import {
  * staged latency so the client's progressive-render path is exercised for
  * real rather than hypothetically.
  *
- * SWAPPING IN A REAL MODEL: replace the body of `streamPlan` — hand
+ * The event sequence itself lives in `planStream.ts`, shared with the
+ * serverless function that serves the deployed build — so the hosted planner
+ * cannot drift from the one used in development.
+ *
+ * SWAPPING IN A REAL MODEL: replace the body of `planEvents` — hand
  * `PlanRequestSchema`'s output plus `ItinerarySchema` to a model as a
  * structured-output request, and forward its partial days as `day` frames.
  * Every other file in this repository stays as it is.
@@ -49,20 +41,6 @@ app.use(
 );
 
 /* -------------------------------------------------------------------------
- * Simulated latency
- *
- * Real generation is not uniform: the model thinks for a while, then emits a
- * burst. `pause` is deliberately jittered so the client cannot accidentally
- * depend on a fixed cadence.
- * ---------------------------------------------------------------------- */
-
-function pause(ms: number, jitter = 0.25): Promise<void> {
-  const spread = ms * jitter;
-  const actual = ms - spread + Math.random() * spread * 2;
-  return new Promise((resolve) => setTimeout(resolve, Math.max(0, actual)));
-}
-
-/* -------------------------------------------------------------------------
  * SSE plumbing
  * ---------------------------------------------------------------------- */
 
@@ -75,10 +53,6 @@ function openStream(res: Response): void {
     'X-Accel-Buffering': 'no',
   });
   res.flushHeaders();
-}
-
-function send(res: Response, event: PlanEvent): void {
-  res.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
 /* -------------------------------------------------------------------------
@@ -107,8 +81,6 @@ app.post('/api/plan', (req: Request, res: Response) => {
 async function streamPlan(request: PlanRequest, res: Response): Promise<void> {
   openStream(res);
 
-  // The client hanging up mid-generation is the normal case (navigation,
-  // "cancel"), not an error. Everything downstream checks this flag.
   // Read through a function rather than as a variable. The flag is only ever
   // written from the 'close' callback, which control-flow analysis cannot see;
   // reading a plain `let` would be narrowed to `false` for the whole body and
@@ -120,100 +92,26 @@ async function streamPlan(request: PlanRequest, res: Response): Promise<void> {
   });
 
   try {
-    const state = createPlannerState(request);
-
-    if (!state) {
-      await pause(500);
-      send(res, {
-        type: 'error',
-        code: 'unknown_destination',
-        message: `We do not have a venue catalogue for "${request.destination}" yet. Try one of the eight cities on the map.`,
-      });
-      res.end();
-      return;
-    }
-
-    const { city } = state;
-    const messages = statusMessages(city, request);
-
-    // Phase 1 — thinking. Status frames only.
-    for (let i = 0; i < messages.length; i += 1) {
+    for await (const event of planEvents(request, { isCancelled })) {
       if (isCancelled()) return;
-      const message = messages[i];
-      if (!message) continue;
-      send(res, {
-        type: 'status',
-        message,
-        // Status occupies the first 35% of the bar; days fill the rest.
-        progress: ((i + 1) / messages.length) * 0.35,
-      });
-      await pause(i === 0 ? 700 : 520);
+      res.write(toSseFrame(event));
     }
 
-    if (isCancelled()) return;
-
-    // Phase 2 — the envelope. The client can render the header, the map and
-    // the day skeletons from this alone.
-    send(res, {
-      type: 'meta',
-      id: `trip_${city.id}_${createTripSuffix(request)}`,
-      meta: buildMeta(city, request),
-      summary: buildSummary(city, request),
-      totalDays: request.days,
-    });
-
-    await pause(400);
-
-    // Phase 3 — one day at a time. This is the frame the UI animates in.
-    const days: ItineraryDay[] = [];
-    for (let dayNumber = 1; dayNumber <= request.days; dayNumber += 1) {
-      if (isCancelled()) return;
-
-      const day = composeDay(state, dayNumber);
-      days.push(day);
-
-      send(res, { type: 'day', day });
-      send(res, {
-        type: 'status',
-        message:
-          dayNumber === request.days
-            ? 'Checking the whole plan for conflicts…'
-            : `Building day ${String(dayNumber + 1)} of ${String(request.days)}…`,
-        progress: 0.35 + (dayNumber / request.days) * 0.6,
-      });
-
-      await pause(620);
-    }
-
-    if (isCancelled()) return;
-
-    // Phase 4 — close.
-    send(res, {
-      type: 'done',
-      highlights: buildHighlights(days, city),
-      generatedAt: new Date().toISOString(),
-    });
-    res.end();
+    if (!res.writableEnded) res.end();
   } catch (error) {
     console.error('[plan] generation failed', error);
+
     if (!res.writableEnded) {
-      send(res, {
-        type: 'error',
-        code: 'internal',
-        message: 'The planner failed part-way through. Nothing was saved — try again.',
-      });
+      res.write(
+        toSseFrame({
+          type: 'error',
+          code: 'internal',
+          message: 'The planner failed part-way through. Nothing was saved — try again.',
+        }),
+      );
       res.end();
     }
   }
-}
-
-function createTripSuffix(request: PlanRequest): string {
-  const rng = createRng(
-    `${request.destination}:${String(request.days)}:${request.moods.join(',')}:${request.pace}:${String(request.budgetPerDay)}`,
-  );
-  return Math.floor(rng() * 0xffffff)
-    .toString(36)
-    .padStart(5, '0');
 }
 
 /* -------------------------------------------------------------------------
@@ -227,40 +125,11 @@ app.post('/api/alternatives', (req: Request, res: Response) => {
     return;
   }
 
-  const { destination, kind, blockId, budgetPerDay } = parsed.data;
-  const city = findCityByName(destination) ?? CITY_BY_ID.get(destination);
-  const venues = city ? getCityVenues(city.id) : undefined;
-
-  if (!city || !venues) {
+  const alternatives = buildAlternatives(parsed.data);
+  if (!alternatives) {
     res.status(404).json({ error: 'unknown_destination' });
     return;
   }
-
-  // Prefer the same kind — a swap should be a different museum, not a bar.
-  const sameKind = venues.venues.filter((v) => v.kind === kind);
-  const fallback = venues.venues.filter((v) => v.kind !== kind);
-  const pool = [...sameKind, ...fallback].filter((v) => v.price <= budgetPerDay);
-
-  const chosen = (pool.length > 0 ? pool : venues.venues).slice(0, 3);
-
-  const alternatives: ActivityBlock[] = chosen.map((venue, index) => ({
-    id: `${blockId}-alt-${String(index)}`,
-    kind: venue.kind,
-    title: venue.title,
-    summary: venue.summary,
-    startTime: '12:00',
-    durationMinutes: venue.durationMinutes,
-    place: {
-      name: venue.title,
-      address: venue.address,
-      coordinates: venue.coordinates,
-      walkFromPrevious: null,
-    },
-    price: venue.price,
-    tags: venue.tags.slice(0, 6),
-    imageUrl: photo(venue.imageSeed, PHOTO_SIZES.card),
-    note: venue.note ?? null,
-  }));
 
   res.json({ alternatives });
 });

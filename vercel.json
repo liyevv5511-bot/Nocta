@@ -2,11 +2,25 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/((?!api/|assets/|.*\\..*).*)", "destination": "/index.html" }],
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "outputDirectory": "dist",
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "//": "Filesystem first — this only catches paths with no prerendered file and no extension, which is the client router's territory. /api is excluded so the functions are reachable, and dotted paths are excluded so a missing chunk 404s honestly instead of arriving as HTML.",
+      "source": "/((?!api/|assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/og/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, s-maxage=604800" }]
     },
     {
       "source": "/(.*)",

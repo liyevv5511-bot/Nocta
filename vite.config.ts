@@ -11,12 +11,17 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    visualizer({
-      filename: 'dist/stats.html',
-      gzipSize: true,
-      brotliSize: true,
-      template: 'treemap',
-    }),
+    // Opt-in: the treemap is a debugging artefact, and emitting it by default
+    // publishes a map of the bundle to every visitor at /stats.html.
+    // `ANALYZE=1 npm run build` when you want it.
+    process.env.ANALYZE === '1'
+      ? visualizer({
+          filename: 'dist/stats.html',
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap',
+        })
+      : null,
   ],
   resolve: {
     alias: {
