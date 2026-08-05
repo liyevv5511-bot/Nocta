@@ -5,6 +5,7 @@ const COLUMNS = [
     heading: 'Product',
     links: [
       { label: 'Plan a trip', to: '/plan' },
+      { label: 'Route builder', to: '/route' },
       { label: 'Saved trips', to: '/saved' },
       { label: 'Design system', to: '/styleguide' },
     ],

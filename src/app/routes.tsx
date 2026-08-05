@@ -45,6 +45,11 @@ export const ROUTES: readonly RouteDefinition[] = [
     prerender: true,
   },
   {
+    path: 'route',
+    importer: () => named(() => import('@/routes/Route'), 'Route'),
+    prerender: true,
+  },
+  {
     path: 'destination/:cityId',
     importer: () => named(() => import('@/routes/Destination'), 'Destination'),
     prerender: true,

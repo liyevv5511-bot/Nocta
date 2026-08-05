@@ -220,6 +220,14 @@ function buildCards(): Card[] {
       facts: ['Streamed generation', 'Drag to reorder', 'Free'],
     },
     {
+      slug: 'route',
+      eyebrow: 'Route builder',
+      title: 'One trip, several cities.',
+      detail:
+        'Chain up to six. Nocta measures every hop, works out how long each city is worth, and totals the whole thing.',
+      facts: ['Great-circle distances', 'Shareable as a link', 'Up to 6 stops'],
+    },
+    {
       slug: 'styleguide',
       eyebrow: 'Design system',
       title: 'Every token, live.',

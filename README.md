@@ -142,8 +142,6 @@ Stated plainly rather than left for you to discover:
   switcher.
 - **PDF export via jsPDF/html2canvas.** `/trip/:id` offers print-to-PDF through the browser, which
   produces better output than a canvas rasterisation, but it is not the library asked for.
-- **Multi-city route builder UI.** The great-circle arc rendering, sequencing and draw-on animation
-  are implemented and `WorldMap` accepts a `route` prop; there is no interface for assembling one.
 - **Hotel/restaurant ratings.** The venue catalogue has no rating field — inventing star ratings for
   real, named businesses is the kind of fake data this project is otherwise free of.
 - **The live URL is not recorded here yet.** The project is deployed and the pipeline is complete;
@@ -151,6 +149,34 @@ Stated plainly rather than left for you to discover:
   deployment, because an unverified link is worse than none.
 
 ---
+
+## The route builder
+
+`/route` chains up to six cities into one trip: great-circle distance and travel time per leg, how
+many nights each city is worth, and a total for the whole thing.
+
+**The route is the URL.** `?cities=lisbon,porto,copenhagen` is the entire state — not a mirror of a
+store, the state itself. That is the feature rather than a shortcut: a route you assemble is worth
+sending to whoever you are travelling with, and putting it in the address bar makes it shareable
+with no account, no database and no link shortener. Back, forward and reload all work without a
+line of code.
+
+Two decisions worth defending:
+
+- **Nights come from the catalogue, not a constant.** A city with more researched venues and more
+  day trips sustains a longer stay; a route that gave Reykjavík and Tokyo the same three nights
+  would be visibly wrong to anyone who had been to either. Transit days are counted too — you do
+  not land and start sightseeing.
+- **Reordering is buttons, not drag.** A route is at most six rows on a page that is mostly map.
+  "Move up" is unambiguous, keyboard-operable with no custom key handling, and does not compete
+  with page scroll on touch. Drag earns its complexity inside a day, where there are twenty items
+  and the gesture maps onto what you mean; here it is ceremony. Framer's `layout` does the visual
+  work drag would have done — the list springs into its new order.
+
+The map's own destination list is switched off on this page, because the builder beside it already
+exposes every city as a focusable control and the selected ones as an ordered list. `WorldMap`
+takes that as an explicit prop rather than inferring it, so turning off the canvas's only
+accessibility surface has to be a decision someone made on purpose.
 
 ## Prerendering and Open Graph
 
@@ -253,8 +279,8 @@ than moving thresholds:
 ```
 
 The unit suite covers the itinerary reducer (re-timing, reordering, cross-day moves, totals), the
-Zod contract, the storage migration chain, the planner engine, and the UI primitives' keyboard and
-ARIA behaviour.
+route model (URL parsing, legs, totals), the distance maths, the Zod contract, the storage
+migration chain, the planner engine, and the UI primitives' keyboard and ARIA behaviour.
 
 Bugs found by writing these rather than by clicking around:
 
@@ -289,6 +315,7 @@ src/
   features/
     hero/     Hero, HeroGlobe, useHeroParallax, SplitHeadline
     map/      WorldMap, CityCard, CityList, useMapCamera, markers, renderMap
+    route/    RouteBuilder, RouteStops, useRoute, route.model
     itinerary/ PlanForm, ItineraryTimeline, DayColumn, ActivityCard, SwapDialog,
                GenerationStatus, plan.api, plan.store, itinerary.reducer
     trips/    useTripStorage
@@ -297,7 +324,8 @@ src/
     ui/       Button, Card, GlassPanel, Chip, Photo, Skeleton, Slider,
               Toggle, Accordion, Toast
   data/       cities, venues, images        ← the researched catalogue
-  lib/        cn, motion, format, storage, useLenis, useGsapScroll, hooks
+  config/     site (the canonical origin, resolved once)
+  lib/        cn, motion, format, geo, storage, useLenis, useGsapScroll, hooks
   types/      itinerary (the contract), city, api
   styles/     tokens.css, globals.css
 server/       Express + SSE planner service

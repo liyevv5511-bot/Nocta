@@ -17,6 +17,16 @@ import { useMapCamera, WORLD_VIEW } from './useMapCamera';
 export interface WorldMapProps {
   /** Cities drawn as a connected route. Empty for the plain destination map. */
   route?: readonly City[];
+  /**
+   * Renders the focusable destination list beside the canvas.
+   *
+   * Only pass `false` when the surrounding page already exposes the same
+   * cities as real, focusable controls — the route builder does, through its
+   * stop list and city picker. The canvas has no accessibility surface of its
+   * own, so switching this off without a replacement removes the feature for
+   * anyone not using a pointer.
+   */
+  showDestinationList?: boolean;
   className?: string;
 }
 
@@ -36,7 +46,11 @@ const CITY_ZOOM = 5.5;
  * from it drives the same camera. Keyboard and screen-reader users get the
  * feature, not a notice explaining that they cannot have it.
  */
-export function WorldMap({ route = [], className }: WorldMapProps): React.ReactElement {
+export function WorldMap({
+  route = [],
+  showDestinationList = true,
+  className,
+}: WorldMapProps): React.ReactElement {
   const [containerRef, size] = useElementSize();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paletteRef = useRef<MapPalette | null>(null);
@@ -127,7 +141,7 @@ export function WorldMap({ route = [], className }: WorldMapProps): React.ReactE
   }, [camera]);
 
   return (
-    <div className={cn('grid gap-6 lg:grid-cols-[1fr_20rem]', className)}>
+    <div className={cn('grid gap-6', showDestinationList && 'lg:grid-cols-[1fr_20rem]', className)}>
       <div
         ref={containerRef}
         className="relative aspect-[16/10] overflow-hidden rounded-xl border border-subtle bg-surface-sunken lg:aspect-auto lg:min-h-[32rem]"
@@ -169,21 +183,31 @@ export function WorldMap({ route = [], className }: WorldMapProps): React.ReactE
         </AnimatePresence>
 
         <p className="pointer-events-none absolute top-4 right-4 rounded-pill border border-subtle bg-canvas/70 px-3 py-1 text-mono-xs tracking-[0.09em] text-tertiary uppercase">
-          {selected === null ? `${String(CITIES.length)} destinations` : selected.country}
+          {routeLabel(route, selected)}
         </p>
       </div>
 
-      <CityList
-        cities={CITIES}
-        selectedId={selected?.id ?? null}
-        onSelect={select}
-        onHover={(cityId) => {
-          const cluster = clusters.find((candidate) =>
-            candidate.cities.some((city) => city.id === cityId),
-          );
-          setHoveredId(cluster?.id ?? null);
-        }}
-      />
+      {showDestinationList ? (
+        <CityList
+          cities={CITIES}
+          selectedId={selected?.id ?? null}
+          onSelect={select}
+          onHover={(cityId) => {
+            const cluster = clusters.find((candidate) =>
+              candidate.cities.some((city) => city.id === cityId),
+            );
+            setHoveredId(cluster?.id ?? null);
+          }}
+        />
+      ) : null}
     </div>
   );
+}
+
+/** What the overlay chip says: the route if there is one, else the catalogue. */
+function routeLabel(route: readonly City[], selected: City | null): string {
+  if (route.length > 0) {
+    return `${String(route.length)} ${route.length === 1 ? 'stop' : 'stops'}`;
+  }
+  return selected === null ? `${String(CITIES.length)} destinations` : selected.country;
 }

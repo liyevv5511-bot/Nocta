@@ -1,9 +1,11 @@
 import { CITY_BY_ID, findCityByName } from '../src/data/cities';
+import { distanceMetres, groundTravelMinutes } from '../src/lib/geo';
 import { photo, PHOTO_SIZES } from '../src/data/images';
 import { getCityVenues, type DistrictSeed, type Slot, type VenueSeed } from '../src/data/venues';
 import type { City } from '../src/types/city';
 import type {
   ActivityBlock,
+  Coordinates,
   ItineraryDay,
   ItineraryMeta,
   Mood,
@@ -41,9 +43,6 @@ const SLOT_SKELETON: Slot[] = ['morning', 'morning', 'midday', 'afternoon', 'aft
 
 const DAY_START_MINUTES = 9 * 60;
 
-/** Rough walking speed through a dense city centre, in metres per minute. */
-const WALK_METRES_PER_MINUTE = 75;
-
 /** Matches `ActivityBlockSchema`'s ceiling on `walkFromPrevious`. */
 const MAX_LEG_MINUTES = 240;
 
@@ -52,51 +51,25 @@ const TRANSFER_MINUTES = 12;
 
 /* -------------------------------------------------------------------------
  * Geometry
+ *
+ * `distanceMetres` and the walking model live in `src/lib/geo.ts`, shared with
+ * the client so a day re-timed in the browser after a drag agrees with the one
+ * the planner laid out.
  * ---------------------------------------------------------------------- */
-
-interface LatLng {
-  lat: number;
-  lng: number;
-}
-
-/** Haversine distance in metres. Used for walk times and route ordering. */
-export function distanceMetres(a: LatLng, b: LatLng): number {
-  const R = 6_371_000;
-  const toRad = (deg: number): number => (deg * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-
-  const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-}
 
 /**
  * Travel time between two consecutive stops.
  *
  * `afterTransit` matters more than it looks. On a day trip the first block is
- * the journey itself — a two-hour train to Nikkō — and the block after it is
+ * the journey itself — a two-hour train to Nikko — and the block after it is
  * 140km from where that block is anchored. Measuring that gap as travel would
  * bill the user twice for the same journey and produce a six-hour "walk". When
  * the previous block was transit, the remaining leg is the transfer at the far
  * end, not the distance covered.
- *
- * The result is also clamped to `MAX_LEG_MINUTES`, which is both a sanity
- * bound and exactly the ceiling the shared schema enforces.
  */
-function walkMinutes(from: LatLng, to: LatLng, afterTransit = false): number {
+function walkMinutes(from: Coordinates, to: Coordinates, afterTransit = false): number {
   if (afterTransit) return TRANSFER_MINUTES;
-
-  const metres = distanceMetres(from, to);
-  // Beyond ~2.5km nobody walks; that becomes a metro or taxi hop, which we
-  // still model as travel time rather than pretending it is free.
-  const minutes =
-    metres > 2_500
-      ? Math.round(metres / 400)
-      : Math.max(1, Math.round(metres / WALK_METRES_PER_MINUTE));
-
-  return Math.min(MAX_LEG_MINUTES, minutes);
+  return groundTravelMinutes(from, to, MAX_LEG_MINUTES);
 }
 
 /* -------------------------------------------------------------------------
@@ -168,7 +141,7 @@ function toBlock(
   venue: VenueSeed,
   index: number,
   dayNumber: number,
-  previous: LatLng | null,
+  previous: Coordinates | null,
   startMinutes: number,
   afterTransit: boolean,
 ): ActivityBlock {
@@ -402,13 +375,13 @@ function takeBest(
  * five points would be — but it removes the crossing paths that make a plan
  * feel machine-generated, and it keeps evening venues last where they belong.
  */
-function orderByProximity(venues: readonly VenueSeed[], origin: LatLng): VenueSeed[] {
+function orderByProximity(venues: readonly VenueSeed[], origin: Coordinates): VenueSeed[] {
   const evening = venues.filter((v) => v.slot === 'evening');
   const rest = venues.filter((v) => v.slot !== 'evening');
 
   const ordered: VenueSeed[] = [];
   const remaining = [...rest];
-  let cursor: LatLng = origin;
+  let cursor: Coordinates = origin;
 
   while (remaining.length > 0) {
     let nearestIndex = 0;
@@ -441,7 +414,7 @@ function buildDayFromSeeds(
 ): ItineraryDay {
   const blocks: ActivityBlock[] = [];
   let clock = DAY_START_MINUTES;
-  let previous: LatLng | null = null;
+  let previous: Coordinates | null = null;
 
   let previousWasTransit = false;
 

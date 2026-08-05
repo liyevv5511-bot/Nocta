@@ -8,6 +8,7 @@ import { transition } from '@/lib/motion';
 
 const NAV = [
   { to: '/plan', label: 'Plan a trip' },
+  { to: '/route', label: 'Route' },
   { to: '/saved', label: 'Saved' },
   { to: '/styleguide', label: 'Styleguide' },
 ] as const;

@@ -63,6 +63,46 @@ export function renderMap(input: RenderInput): void {
   drawGraticule(ctx, viewport, palette);
   drawRoute(input);
   drawClusters(input);
+  drawRouteStops(input);
+}
+
+/**
+ * Numbered markers for the cities on a route.
+ *
+ * Drawn last, on top of the clusters, because at world zoom the clustering
+ * collapses nearby cities into a centroid — so the arcs, which are drawn
+ * between real coordinates, appeared to start and end in empty space. A stop
+ * on the route is a specific place and gets a specific marker.
+ */
+function drawRouteStops(input: RenderInput): void {
+  const { ctx, viewport, palette, route, routeProgress } = input;
+  if (route.length === 0) return;
+
+  route.forEach((city, index) => {
+    // Each marker lands as its incoming leg finishes drawing, so the route
+    // assembles in order rather than appearing complete before the arcs are.
+    const arrival = route.length === 1 ? 0 : index / (route.length - 1);
+    if (routeProgress < arrival) return;
+
+    const point = project(city.coordinates, viewport);
+
+    ctx.beginPath();
+    ctx.fillStyle = palette.marker;
+    ctx.arc(point.x, point.y, 11, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.strokeStyle = palette.markerText;
+    ctx.lineWidth = 1.5;
+    ctx.arc(point.x, point.y, 11, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = palette.markerText;
+    ctx.font = '700 11px ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(index + 1), point.x, point.y + 0.5);
+  });
 }
 
 /**

@@ -1,3 +1,4 @@
+import { groundTravelMinutes } from '@/lib/geo';
 import type { ActivityBlock, Itinerary, ItineraryDay } from '@/types/itinerary';
 
 /**
@@ -40,7 +41,10 @@ export function retimeDay(day: ItineraryDay): ItineraryDay {
   let previous: ActivityBlock | null = null;
 
   const blocks = day.blocks.map((block) => {
-    const walk = previous === null ? null : walkMinutes(previous, block);
+    const walk =
+      previous === null
+        ? null
+        : groundTravelMinutes(previous.place.coordinates, block.place.coordinates);
     clock += walk ?? 0;
 
     const retimed: ActivityBlock = {
@@ -55,25 +59,6 @@ export function retimeDay(day: ItineraryDay): ItineraryDay {
   });
 
   return { ...day, blocks };
-}
-
-/** Haversine, then a walking pace. Duplicated from the planner by intent —
- *  the client must be able to re-time a day with the server offline. */
-function walkMinutes(from: ActivityBlock, to: ActivityBlock): number {
-  const R = 6_371_000;
-  const toRad = (deg: number): number => (deg * Math.PI) / 180;
-  const a = from.place.coordinates;
-  const b = to.place.coordinates;
-
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.sin(dLng / 2) ** 2 * Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat));
-  const metres = 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-
-  if (metres > 2_500) return Math.round(metres / 400);
-  return Math.max(1, Math.round(metres / 75));
 }
 
 /* -------------------------------------------------------------------------

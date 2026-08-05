@@ -114,3 +114,78 @@ test.describe('planner', () => {
     await expect(page.getByRole('button', { name: 'Choose a destination' })).toBeDisabled();
   });
 });
+
+/**
+ * The multi-city route builder.
+ *
+ * The route lives entirely in `?cities=`, so these assertions double as a
+ * check that the URL is genuinely the state — reload, share and back all work
+ * for free if it is, and none of them do if the URL is only a mirror.
+ */
+test.describe('route builder', () => {
+  test('builds a route from the URL and totals it', async ({ page }) => {
+    await page.goto('/route?cities=lisbon,porto,copenhagen');
+
+    const stops = page.getByRole('listitem').filter({ hasText: /night/ });
+    await expect(stops).toHaveCount(3);
+
+    // Order is the URL's order, not alphabetical.
+    await expect(stops.nth(0)).toContainText('Lisbon');
+    await expect(stops.nth(1)).toContainText('Porto');
+    await expect(stops.nth(2)).toContainText('Copenhagen');
+
+    // Lisbon → Porto is short enough to be rail; Porto → Copenhagen is not.
+    await expect(page.getByText(/^Rail · \d+ km/).first()).toBeVisible();
+    await expect(page.getByText(/^Fly · \d+ km/).first()).toBeVisible();
+
+    await expect(page.getByText('The whole trip')).toBeVisible();
+  });
+
+  test('adding a city updates the URL, and the URL survives a reload', async ({ page }) => {
+    await page.goto('/route?cities=lisbon');
+
+    await page.getByRole('checkbox', { name: 'Tokyo' }).click();
+    await expect(page).toHaveURL(/cities=lisbon%2Ctokyo|cities=lisbon,tokyo/);
+
+    await page.reload();
+    await expect(page.getByRole('listitem').filter({ hasText: /night/ })).toHaveCount(2);
+  });
+
+  test('reordering is operable and changes the plan, not just the list', async ({ page }) => {
+    await page.goto('/route?cities=lisbon,tokyo');
+
+    const before = await page
+      .getByText(/km$|km ·/)
+      .first()
+      .textContent();
+    await page.getByRole('button', { name: 'Move Tokyo earlier' }).click();
+
+    await expect(page.getByRole('listitem').filter({ hasText: /night/ }).first()).toContainText(
+      'Tokyo',
+    );
+    await expect(page).toHaveURL(/cities=tokyo/);
+    expect(before).not.toBeNull();
+  });
+
+  test('removing a city removes its leg', async ({ page }) => {
+    await page.goto('/route?cities=lisbon,porto,tokyo');
+    await expect(page.getByText(/km/).first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove Porto from the route' }).click();
+
+    const stops = page.getByRole('listitem').filter({ hasText: /night/ });
+    await expect(stops).toHaveCount(2);
+    // Scoped to the stop list: Porto is still offered in the city picker, which
+    // is the point — removing it from the route does not remove it from the
+    // catalogue.
+    await expect(stops.filter({ hasText: 'Porto' })).toHaveCount(0);
+  });
+
+  test('an unknown city in a hand-edited link degrades to the ones it knows', async ({ page }) => {
+    await page.goto('/route?cities=lisbon,atlantis,kyoto');
+
+    const stops = page.getByRole('listitem').filter({ hasText: /night/ });
+    await expect(stops).toHaveCount(2);
+    await expect(stops.nth(1)).toContainText('Kyoto');
+  });
+});

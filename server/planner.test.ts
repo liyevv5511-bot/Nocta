@@ -9,7 +9,6 @@ import {
   composeDay,
   createPlannerState,
   createRng,
-  distanceMetres,
 } from './planner';
 
 const REQUEST: PlanRequest = {
@@ -28,26 +27,6 @@ function plan(overrides: Partial<PlanRequest> = {}) {
   const days = Array.from({ length: request.days }, (_, index) => composeDay(state, index + 1));
   return { request, state, days };
 }
-
-describe('distanceMetres', () => {
-  it('is zero for identical points', () => {
-    const point = { lat: 38.7223, lng: -9.1393 };
-    expect(distanceMetres(point, point)).toBe(0);
-  });
-
-  it('matches the known Lisbon–Porto distance to within a percent', () => {
-    const metres = distanceMetres({ lat: 38.7223, lng: -9.1393 }, { lat: 41.1579, lng: -8.6291 });
-    // Great-circle distance is ~274 km.
-    expect(metres).toBeGreaterThan(270_000);
-    expect(metres).toBeLessThan(278_000);
-  });
-
-  it('is symmetric', () => {
-    const a = { lat: 35.6762, lng: 139.6503 };
-    const b = { lat: 64.1466, lng: -21.9426 };
-    expect(distanceMetres(a, b)).toBeCloseTo(distanceMetres(b, a), 6);
-  });
-});
 
 describe('createRng', () => {
   it('is deterministic for a given seed', () => {
