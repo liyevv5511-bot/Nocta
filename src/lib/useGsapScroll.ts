@@ -147,6 +147,5 @@ export function useGsapContext(
     // `build` is intentionally excluded — it is read through a ref so an
     // inline arrow at the call site does not tear down every trigger on
     // every render.
-     
   }, [scope, reducedMotion, ...dependencies]);
 }
