@@ -146,8 +146,9 @@ Stated plainly rather than left for you to discover:
   are implemented and `WorldMap` accepts a `route` prop; there is no interface for assembling one.
 - **Hotel/restaurant ratings.** The venue catalogue has no rating field — inventing star ratings for
   real, named businesses is the kind of fake data this project is otherwise free of.
-- **A live URL.** The repository is deployable — `vercel.json`, the serverless planner and the
-  Lighthouse job are all configured — but the deploy itself is the repository owner's to make.
+- **The live URL is not recorded here yet.** The project is deployed and the pipeline is complete;
+  the URL simply is not written into this file until it has been confirmed against the running
+  deployment, because an unverified link is worse than none.
 
 ---
 
@@ -317,6 +318,16 @@ Push to `main` and Vercel builds it. `npm run build` runs the whole chain —
 `vite build → og → prerender → seo` — so the deployed output includes the prerendered routes, the
 Open Graph cards and a sitemap generated from the catalogue.
 
+**The canonical origin is read from the deployment, not hardcoded.**
+`src/config/site.ts` resolves it once for all three consumers — the browser bundle (baked in as a
+literal by Vite), the prerenderer, and the sitemap generator — from
+`VERCEL_PROJECT_PRODUCTION_URL`, or from `NOCTA_SITE_URL` if you point a custom domain at it.
+Nothing needs editing when the URL changes.
+
+That matters more than it sounds: a canonical link pointing at a domain you do not own tells search
+engines the real page is elsewhere, which de-indexes the one that exists. Hardcoding it is the
+default mistake, and it fails silently.
+
 **The planner ships with it.** `api/plan.ts`, `api/alternatives.ts` and `api/cities.ts` are
 serverless functions that consume the same `server/planStream.ts` generator the local Express
 service does. There is one implementation of the event sequence and one place to change when the
@@ -337,4 +348,5 @@ Routing rules, identical across `vercel.json`, `netlify.toml` and the E2E harnes
 3. Everything else falls back to `index.html` for the client router.
 
 Local development still runs two processes — `npm run dev` starts Vite and the Express planner on
-`:8787`, proxied through `/api`.
+`:8787`, proxied through `/api`. With no environment set, the origin resolves to
+`http://localhost:4173`, so a local build and its E2E run agree with each other.

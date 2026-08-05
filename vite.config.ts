@@ -5,9 +5,17 @@ import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 
+import { resolveSiteUrl } from './src/config/site';
+
 const API_TARGET = process.env.NOCTA_API_ORIGIN ?? 'http://localhost:8787';
 
 export default defineConfig({
+  // The canonical origin, baked in as a literal so the client needs no
+  // environment lookup. Resolved from the deployment rather than hardcoded —
+  // see `scripts/siteUrl.ts`.
+  define: {
+    __SITE_URL__: JSON.stringify(resolveSiteUrl()),
+  },
   plugins: [
     react(),
     tailwindcss(),

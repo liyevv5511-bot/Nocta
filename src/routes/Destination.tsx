@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 
 import { Seo } from '@/app/Seo';
+import { ogImageUrl } from '@/config/site';
 import { CITIES, CITY_BY_ID } from '@/data/cities';
 import { getCityVenues } from '@/data/venues';
 import { Chip, GlassPanel, Photo } from '@/features/ui';
@@ -34,7 +35,7 @@ export function Destination(): React.ReactElement {
         title={`${city.name}, ${city.country}`}
         description={`${city.tagline} ${String(venueCount)} researched venues, real coordinates and walking times — build a plan in about eight seconds.`}
         path={`/destination/${city.id}`}
-        ogImage={`https://nocta.travel/og/city-${city.id}.png`}
+        ogImage={ogImageUrl(`city-${city.id}`)}
         jsonLd={buildJsonLd(city, venueCount)}
       />
 

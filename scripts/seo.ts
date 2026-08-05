@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { CITIES } from '../src/data/cities';
 
+import { resolveSiteUrl } from '../src/config/site';
+
 /**
  * Generates `sitemap.xml` and `robots.txt` into the build output.
  *
@@ -16,7 +18,7 @@ import { CITIES } from '../src/data/cities';
  * reason.
  */
 
-const SITE_URL = process.env.NOCTA_SITE_URL ?? 'https://nocta.travel';
+const SITE_URL = resolveSiteUrl();
 const OUT_DIR = join(process.cwd(), 'dist');
 
 interface SitemapEntry {

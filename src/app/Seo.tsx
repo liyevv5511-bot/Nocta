@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
-const SITE_URL = 'https://nocta.travel';
+import { SITE_URL, ogImageUrl } from '@/config/site';
+
 const SITE_NAME = 'Nocta';
 
 /**
@@ -55,7 +56,7 @@ function resolve({
   title,
   description,
   path,
-  ogImage = `${SITE_URL}/og/default.png`,
+  ogImage = ogImageUrl('default'),
   jsonLd,
   noIndex = false,
 }: SeoProps): Resolved {

@@ -1,5 +1,18 @@
 import { expect, test } from '@playwright/test';
 
+import { resolveSiteUrl } from '../src/config/site';
+
+/**
+ * The origin the build stamped into the canonical links and the sitemap.
+ *
+ * Read from the same resolver the build uses rather than hardcoded: the suite
+ * runs against a local build where that resolves to localhost, and against a
+ * deploy preview where it resolves to the deployment's own hostname. Asserting
+ * a literal domain would make the suite pass only on a machine that happened
+ * to match it.
+ */
+const SITE_URL = resolveSiteUrl();
+
 /**
  * Route smoke and cross-cutting guarantees.
  *
@@ -176,10 +189,7 @@ test.describe('navigation after hydration', () => {
 
     await expect(page).toHaveTitle(/Plan a trip/);
     await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-      'href',
-      'https://nocta.travel/plan',
-    );
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE_URL}/plan`);
   });
 });
 
@@ -210,11 +220,11 @@ test.describe('prerendered HTML', () => {
     await expect(page).toHaveTitle(/Reykjavík, Iceland/);
     await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://nocta.travel/destination/reykjavik',
+      `${SITE_URL}/destination/reykjavik`,
     );
     await expect(page.locator('head meta[property="og:image"]')).toHaveAttribute(
       'content',
-      'https://nocta.travel/og/city-reykjavik.png',
+      `${SITE_URL}/og/city-reykjavik.png`,
     );
     await expect(page.locator('h1')).toHaveText('Reykjavík');
   });
@@ -256,7 +266,7 @@ test.describe('prerendered HTML', () => {
   test('the sitemap lists the destination paths', async ({ request }) => {
     const sitemap = await (await request.get('/sitemap.xml')).text();
 
-    expect(sitemap).toContain('<loc>https://nocta.travel/destination/lisbon</loc>');
+    expect(sitemap).toContain(`<loc>${SITE_URL}/destination/lisbon</loc>`);
     expect(sitemap).not.toContain('?destination=');
   });
 });
