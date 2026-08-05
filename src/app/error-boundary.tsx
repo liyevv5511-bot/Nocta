@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom';
 
 import { Button } from '@/features/ui';
+import { IS_DEV } from '@/lib/env';
 
 /**
  * Two error surfaces, because there are two kinds of failure:
@@ -15,8 +16,6 @@ import { Button } from '@/features/ui';
  * Both keep the user on a page with a way forward. Neither shows a stack trace
  * in production: it is not actionable for a traveller and it leaks structure.
  */
-
-const IS_DEV = import.meta.env.DEV;
 
 export function RouteErrorBoundary(): React.ReactElement {
   const error = useRouteError();

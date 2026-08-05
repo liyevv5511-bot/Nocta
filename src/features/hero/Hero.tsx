@@ -1,22 +1,13 @@
 import { motion } from 'framer-motion';
-import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 
 import { CITIES } from '@/data/cities';
 import { fadeUp, stagger } from '@/lib/motion';
 import { scrollTo } from '@/lib/useLenis';
 
+import { HeroGlobe } from './HeroGlobe';
 import { SplitHeadline } from './SplitHeadline';
 import { useHeroParallax } from './useHeroParallax';
-
-/**
- * The globe is code-split away from the entry bundle. It is decorative, it is
- * canvas-heavy, and it is not needed for first paint — three good reasons for
- * it never to be in the chunk that gates LCP.
- */
-const HeroGlobe = lazy(async () => ({
-  default: (await import('./HeroGlobe')).HeroGlobe,
-}));
 
 export function Hero(): React.ReactElement {
   const parallax = useHeroParallax();
@@ -42,9 +33,7 @@ export function Hero(): React.ReactElement {
         style={{ y: parallax.mid, scale: parallax.scale }}
         className="absolute inset-y-0 right-[-20%] -z-20 w-[85vmin] opacity-60 sm:right-[-8%] lg:right-[2%] lg:opacity-100"
       >
-        <Suspense fallback={null}>
-          <HeroGlobe className="size-full" />
-        </Suspense>
+        <HeroGlobe className="size-full" />
       </motion.div>
 
       {/* Layer 3 — content, fastest, leaves first. */}

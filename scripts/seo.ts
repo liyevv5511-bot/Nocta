@@ -34,9 +34,11 @@ const STATIC_ENTRIES: SitemapEntry[] = [
 function buildSitemap(): string {
   const today = new Date().toISOString().slice(0, 10);
 
-  // Each destination is a real, crawlable entry point into the planner.
+  // Real paths, not `?destination=` query strings: those cannot be
+  // prerendered to a file, cannot carry their own Open Graph card, and are
+  // routinely collapsed to the bare path by crawlers.
   const cityEntries: SitemapEntry[] = CITIES.map((city) => ({
-    path: `/plan?destination=${encodeURIComponent(city.name)}`,
+    path: `/destination/${city.id}`,
     changefreq: 'monthly',
     priority: 0.7,
   }));

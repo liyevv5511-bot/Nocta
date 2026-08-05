@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ActivityCard } from '@/features/itinerary/ActivityCard';
-import { streamPlan } from '@/features/itinerary/plan.api';
 import { WorldMap } from '@/features/map';
 import { Button, DayColumnSkeleton, GlassPanel } from '@/features/ui';
 import { fadeUp, inViewport } from '@/lib/motion';
@@ -45,20 +44,25 @@ export function LiveDemo(): React.ReactElement {
     setFailed(null);
     setDay(null);
 
-    streamPlan(
-      DEMO_REQUEST,
-      {
-        onEvent: (event) => {
-          if (event.type === 'status') setStatus(event.message);
-          if (event.type === 'day') setDay(event.day);
-          if (event.type === 'error') setFailed(event.message);
+    // Imported here rather than at module scope: this pulls in the Zod schema
+    // and the SSE client, none of which is needed to render the page, and an
+    // effect — unlike React.lazy — never runs during prerendering.
+    void import('@/features/itinerary/plan.api').then(({ streamPlan }) =>
+      streamPlan(
+        DEMO_REQUEST,
+        {
+          onEvent: (event) => {
+            if (event.type === 'status') setStatus(event.message);
+            if (event.type === 'day') setDay(event.day);
+            if (event.type === 'error') setFailed(event.message);
+          },
         },
-      },
-      controller.signal,
-    ).catch((error: unknown) => {
-      if (isApiError(error) && error.kind === 'aborted') return;
-      setFailed(isApiError(error) ? error.userMessage : 'The planner is unreachable right now.');
-    });
+        controller.signal,
+      ).catch((error: unknown) => {
+        if (isApiError(error) && error.kind === 'aborted') return;
+        setFailed(isApiError(error) ? error.userMessage : 'The planner is unreachable right now.');
+      }),
+    );
 
     return () => {
       controller.abort();

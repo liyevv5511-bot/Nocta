@@ -1,44 +1,33 @@
-import { lazy, Suspense, type ReactNode } from 'react';
-
 import { Seo } from '@/app/Seo';
 import { Hero } from '@/features/hero/Hero';
+import { BentoFeatures } from '@/features/landing/BentoFeatures';
+import { CallToAction } from '@/features/landing/CallToAction';
+import { CityGallery } from '@/features/landing/CityGallery';
+import { Faq } from '@/features/landing/Faq';
+import { HowItWorks } from '@/features/landing/HowItWorks';
+import { LiveDemo } from '@/features/landing/LiveDemo';
+import { Pricing } from '@/features/landing/Pricing';
+import { Testimonials } from '@/features/landing/Testimonials';
 
 /**
  * The landing page.
  *
- * Only the hero is in the initial chunk. Everything below the fold is split
- * out and mounted behind `Suspense` — which is what keeps the first-load JS
- * budget achievable, because between them these sections pull in GSAP, the
- * canvas map and the streaming client, none of which are needed to paint the
- * hero.
+ * Everything here is a plain import. An earlier version wrapped each
+ * below-the-fold section in `React.lazy` + `Suspense` to keep the initial
+ * payload down, and that made the page impossible to prerender usefully: a
+ * suspending boundary pushes React into out-of-order streaming, and the
+ * resulting file needs JavaScript to assemble itself.
  *
- * Each placeholder reserves a plausible height so the deferred sections do not
- * shift the page as they arrive. That is the whole reason `SectionFallback`
- * takes a height rather than rendering a spinner: the CLS budget is 0.05, and
- * eight sections popping in from zero height would blow it on their own.
+ * The payload is still controlled, just at the right layer — the two genuinely
+ * heavy dependencies are deferred with a dynamic `import()` inside an effect,
+ * which never runs during a server render:
+ *
+ *   GSAP (≈45kB gz)     → `lib/useGsapScroll.ts`
+ *   The plan client     → `landing/LiveDemo.tsx`
+ *
+ * That is a better split than the component-level one anyway: it defers the
+ * bytes without deferring the markup.
  */
-const HowItWorks = lazy(async () => ({
-  default: (await import('@/features/landing/HowItWorks')).HowItWorks,
-}));
-const CityGallery = lazy(async () => ({
-  default: (await import('@/features/landing/CityGallery')).CityGallery,
-}));
-const LiveDemo = lazy(async () => ({
-  default: (await import('@/features/landing/LiveDemo')).LiveDemo,
-}));
-const BentoFeatures = lazy(async () => ({
-  default: (await import('@/features/landing/BentoFeatures')).BentoFeatures,
-}));
-const Pricing = lazy(async () => ({
-  default: (await import('@/features/landing/Pricing')).Pricing,
-}));
-const Testimonials = lazy(async () => ({
-  default: (await import('@/features/landing/Testimonials')).Testimonials,
-}));
-const Faq = lazy(async () => ({ default: (await import('@/features/landing/Faq')).Faq }));
-const CallToAction = lazy(async () => ({
-  default: (await import('@/features/landing/CallToAction')).CallToAction,
-}));
 
 const JSON_LD = {
   '@context': 'https://schema.org',
@@ -62,43 +51,14 @@ export function Landing(): React.ReactElement {
       />
 
       <Hero />
-
-      <Deferred minHeight="70rem">
-        <HowItWorks />
-      </Deferred>
-      <Deferred minHeight="40rem">
-        <CityGallery />
-      </Deferred>
-      <Deferred minHeight="80rem">
-        <LiveDemo />
-      </Deferred>
-      <Deferred minHeight="45rem">
-        <BentoFeatures />
-      </Deferred>
-      <Deferred minHeight="50rem">
-        <Pricing />
-      </Deferred>
-      <Deferred minHeight="35rem">
-        <Testimonials />
-      </Deferred>
-      <Deferred minHeight="40rem">
-        <Faq />
-      </Deferred>
-      <Deferred minHeight="30rem">
-        <CallToAction />
-      </Deferred>
+      <HowItWorks />
+      <CityGallery />
+      <LiveDemo />
+      <BentoFeatures />
+      <Pricing />
+      <Testimonials />
+      <Faq />
+      <CallToAction />
     </>
-  );
-}
-
-function Deferred({
-  children,
-  minHeight,
-}: {
-  children: ReactNode;
-  minHeight: string;
-}): React.ReactElement {
-  return (
-    <Suspense fallback={<div aria-hidden="true" style={{ minHeight }} />}>{children}</Suspense>
   );
 }

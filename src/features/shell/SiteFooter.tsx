@@ -12,9 +12,9 @@ const COLUMNS = [
   {
     heading: 'Destinations',
     links: [
-      { label: 'Lisbon', to: '/plan?destination=Lisbon' },
-      { label: 'Tokyo', to: '/plan?destination=Tokyo' },
-      { label: 'Mexico City', to: '/plan?destination=Mexico City' },
+      { label: 'Lisbon', to: '/destination/lisbon' },
+      { label: 'Tokyo', to: '/destination/tokyo' },
+      { label: 'Mexico City', to: '/destination/mexico-city' },
     ],
   },
 ] as const;

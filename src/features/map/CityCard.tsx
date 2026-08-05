@@ -96,10 +96,10 @@ export function CityCard({ city, onClose, className }: CityCardProps): React.Rea
           <p className="sr-only">Best seasons: {formatList(city.bestSeasons)}.</p>
 
           <Link
-            to={`/plan?destination=${encodeURIComponent(city.name)}`}
+            to={`/destination/${city.id}`}
             className="mt-5 flex h-11 w-full items-center justify-center rounded-md bg-accent text-body font-medium text-accent-contrast transition-colors hover:bg-accent-hover"
           >
-            Plan {city.name}
+            About {city.name}
           </Link>
         </div>
       </GlassPanel>

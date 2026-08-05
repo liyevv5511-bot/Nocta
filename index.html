@@ -63,16 +63,47 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      Every static route is prerendered, so this page is readable without
+      JavaScript — the notice is a banner about what stops working, not a wall
+      instead of the content. It deliberately contains no heading: the real
+      page below has an <h1>, and a second one would compete with it in the
+      document outline and in every screen reader's heading list.
+
+      The stylesheet below is what makes that claim true. Framer Motion
+      server-renders each element in its `initial` state — `opacity: 0` and an
+      offset transform — and animates to the resting state on mount. With
+      scripting off that mount never happens, so the prerendered markup is
+      present in the response and invisible on screen: the worst of both. This
+      forces every animated element to its resting state, which is exactly the
+      composition the reduced-motion path already ships.
+    -->
     <noscript>
-      <div style="padding: 3rem; max-width: 40rem; margin: 0 auto; font-family: system-ui">
-        <h1>Nocta needs JavaScript</h1>
-        <p>
-          The planner streams an itinerary as it is generated and lets you rearrange it on a map,
-          which is not something we can deliver as static markup. Enable JavaScript to continue.
-        </p>
-      </div>
+      <style>
+        #root [style*='opacity:0'] {
+          opacity: 1 !important;
+        }
+        #root [style*='transform'] {
+          transform: none !important;
+        }
+      </style>
+      <p
+        style="
+          margin: 0;
+          padding: 0.875rem 1.25rem;
+          font:
+            500 0.875rem/1.5 system-ui,
+            sans-serif;
+          text-align: center;
+          color: #0a0b0f;
+          background: #f5c451;
+        "
+      >
+        <strong>JavaScript is off.</strong> You can read every page, but generating an itinerary,
+        rearranging a day and the interactive map all need it.
+      </p>
     </noscript>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

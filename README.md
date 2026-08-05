@@ -130,15 +130,13 @@ These are deliberate, and each one is a trade I would defend in review:
 | globe.gl (three.js) | Hand-rolled orthographic globe on canvas                                                 | The whole effect is a projection function and ~80 lines of drawing, against ~600kb of WebGL runtime for something on screen for four seconds. That trade is most of why the first-load budget is met.                                                                                                                                                     |
 | react-helmet-async  | React 19 native metadata hoisting (`app/Seo.tsx`)                                        | The library does not support React 19 (its peer range stops at 18), and React 19 hoists `<title>`/`<meta>`/`<link>` natively. Fewer dependencies, same output.                                                                                                                                                                                            |
 | SplitType           | `features/hero/SplitHeadline.tsx`                                                        | Splitting text into spans destroys it for screen readers. The version here renders the real sentence once in a visually-hidden node, marks the animated copy `aria-hidden`, keeps word boundaries intact so it still wraps, and splits on graphemes via `Intl.Segmenter` rather than code points.                                                         |
+| vite-react-ssg      | `scripts/prerender.tsx`                                                                  | The library owns the app entry and the router. A ~150-line script that reads the same route manifest the browser router reads was less machinery than adopting that, and it kept the failure modes visible rather than hidden behind a framework.                                                                                                         |
 | Picsum photography  | —                                                                                        | Keyless and stable, so no catalogue entry can become a dead link. `data/images.ts` is the single swap point for a licensed CDN. Photos are not location-accurate, which is why `Photo` always renders a deterministic gradient underneath — it doubles as the blur-up placeholder and the failure state.                                                  |
 
 ## Not shipped
 
 Stated plainly rather than left for you to discover:
 
-- **Build-time prerendering** (`vite-react-ssg`) and **Satori OG image generation**. Metadata is
-  correct per route at runtime and `sitemap.xml`/`robots.txt` are generated from the catalogue, but
-  the initial HTML response is still a shell. This is the largest remaining gap against the brief.
 - **i18n via react-i18next.** `lib/format.ts` is locale-parameterised throughout (`en`/`az`/`ru`)
   and every figure goes through `Intl`, but strings are not extracted and there is no language
   switcher.
@@ -146,11 +144,56 @@ Stated plainly rather than left for you to discover:
   produces better output than a canvas rasterisation, but it is not the library asked for.
 - **Multi-city route builder UI.** The great-circle arc rendering, sequencing and draw-on animation
   are implemented and `WorldMap` accepts a `route` prop; there is no interface for assembling one.
-- **Magnetic cursor.**
 - **Hotel/restaurant ratings.** The venue catalogue has no rating field — inventing star ratings for
   real, named businesses is the kind of fake data this project is otherwise free of.
 - **Live URL and Lighthouse report.** The Lighthouse CI job and its budget assertions are configured
   in `lighthouserc.json`; nothing has been deployed.
+
+---
+
+## Prerendering and Open Graph
+
+Eleven routes are rendered to real HTML at build time — the landing page, the planner, the
+styleguide, and one page per destination. `npm run build` runs `vite build → og → prerender → seo`.
+
+Turn JavaScript off and the pages still read: full copy, correct `<title>`, canonical, Open Graph
+and JSON-LD in `<head>`. There is a Playwright suite that asserts exactly that, with scripting
+disabled, because it is the only way to prove the markup came from the build rather than from the
+client router a moment later.
+
+Four things had to be true for that to work, and each was a bug first:
+
+**Metadata is copied into `<head>`, not moved.** React 19 hoists `<title>`/`<meta>`/`<link>` in the
+browser; a server render emits them where the component sat, inside `#root`. Moving them out is the
+obvious implementation and it silently breaks hydration — React looks for the nodes it rendered,
+does not find them, and discards the tree. Both copies ship; the head copy carries
+`data-prerender-meta` and `main.tsx` deletes it a moment before hydrating.
+
+**The document records _which_ path it was rendered for.** Every host's SPA fallback serves
+`index.html` for paths it has no file for, so `/saved` arrives carrying the landing page's markup.
+A boolean "this was prerendered" flag tells the client to hydrate that, and hydrating one page's
+DOM with another page's tree fails outright.
+
+**The active route is loaded before hydration, and mounts without a Suspense boundary.** React 19
+emits every Suspense boundary's content out-of-order — appended in a hidden block, moved into place
+by an inline script — whether or not it actually suspended. A file built that way needs JavaScript
+to assemble itself, which is exactly the audience prerendering serves. So `main.tsx` awaits the
+matching module first, and `buildRouteObjects` produces the identical boundary-free tree on both
+sides. The prerenderer throws if streaming markup appears, so this cannot silently regress.
+
+**Heavy dependencies are deferred with a dynamic `import()` inside an effect, not with
+`React.lazy`.** An effect never runs during a server render; `React.lazy` suspends during one. GSAP
+(≈45kB gz) and the streaming plan client load this way. This is a better split regardless — it
+defers the bytes without deferring the markup.
+
+The OG cards are laid out with Satori and rasterised by resvg: one per route plus one per city, all
+deterministic build artefacts. Nothing is screenshotted, so a preview cannot break because a
+headless browser timed out. Satori has no notion of CSS custom properties, so `scripts/og.ts`
+carries a documented sRGB copy of the dark palette — the one place in the project where a colour is
+duplicated, with a lint exemption that says why.
+
+`@fontsource/inter`'s `.woff` files are read directly. The variable build crashes Satori's font
+parser on its `fvar` table, and `.woff2` is not a format it reads at all.
 
 ---
 
@@ -159,15 +202,15 @@ Stated plainly rather than left for you to discover:
 Measured, not asserted. `npm run budget` fails the build if the initial payload grows:
 
 ```
-react       89.2 kB   motion  44.0 kB
-index       22.1 kB   Landing  3.0 kB
-TOTAL      158.4 kB  /  200 kB budget      CSS 10.9 kB / 25 kB
+react       89.2 kB   motion  44.4 kB
+index       27.2 kB   Landing  9.6 kB
+TOTAL      170.3 kB  /  200 kB budget      CSS 10.9 kB / 25 kB
 ```
 
-How it stays there: only the hero is in the landing chunk. Everything below the fold is
-`React.lazy` behind a `Suspense` boundary with a reserved height, so the deferred sections cannot
-shift the page in (the CLS budget is 0.05, and eight sections popping in from zero height would
-blow it on their own). GSAP arrives with the pinned sections, the map and Zod with the live demo.
+How it stays there: heavy dependencies are deferred with a dynamic `import()` inside an effect —
+GSAP and the streaming plan client — so they leave the initial chunk without leaving the markup.
+Route chunks are split with `React.lazy`, except the route being visited, which is awaited before
+hydration so the prerendered HTML has no Suspense boundary to reassemble.
 
 `manualChunks` splits on package path rather than entry name — `react-dom` and `react-dom/client`
 are different module ids, and listing only the former silently leaves the 130kb renderer in the
@@ -178,14 +221,14 @@ entry chunk.
 ## Testing
 
 ```
-111 unit tests   ·   41 E2E (desktop Chromium + mobile WebKit)
+111 unit tests   ·   55 E2E (desktop Chromium + mobile WebKit)
 ```
 
 The unit suite covers the itinerary reducer (re-timing, reordering, cross-day moves, totals), the
 Zod contract, the storage migration chain, the planner engine, and the UI primitives' keyboard and
 ARIA behaviour.
 
-Three bugs were found by writing these rather than by clicking around:
+Bugs found by writing these rather than by clicking around:
 
 1. **Day-trip journeys were billed twice.** A Nikkō day trip put a 140km gap between the transit
    block and the first stop, which the walking model turned into a six-hour leg — and which the
@@ -195,6 +238,14 @@ Three bugs were found by writing these rather than by clicking around:
    deliberate return visits.
 3. **Two canonical links per page** — one static in `index.html`, one from `<Seo>` — which is worse
    for SEO than having none. Route metadata now lives in exactly one place.
+4. **The E2E suite was testing the landing page eleven times over.** `vite preview` does not resolve
+   `/destination/lisbon` to that directory's `index.html`, so every prerendered page fell through to
+   the SPA fallback. The suite was green and the prerendering was doing nothing. `scripts/serve.ts`
+   now implements the same routing rules `vercel.json` and `netlify.toml` declare.
+5. **With JavaScript off, the prerendered pages rendered blank.** Framer Motion server-renders each
+   element in its `initial` state — `opacity: 0` — and animates on mount. Without a mount, the
+   markup was present and invisible. A `<noscript>` stylesheet forces the resting state, which is
+   the composition the reduced-motion path already ships.
 
 E2E runs against the **production build**, not the dev server: a smoke suite that only exercises
 Vite's dev pipeline cannot catch a broken code-split, a missing chunk, or a route that 404s under
@@ -222,7 +273,7 @@ src/
   types/      itinerary (the contract), city, api
   styles/     tokens.css, globals.css
 server/       Express + SSE planner service
-scripts/      seo.ts, check-budget.ts
+scripts/      prerender, renderRoute, og, seo, serve, check-budget
 e2e/          plan, smoke, reduced-motion
 ```
 

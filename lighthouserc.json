@@ -4,7 +4,8 @@
       "url": [
         "http://localhost:4173/",
         "http://localhost:4173/plan",
-        "http://localhost:4173/styleguide"
+        "http://localhost:4173/styleguide",
+        "http://localhost:4173/destination/lisbon"
       ],
       "numberOfRuns": 3,
       "settings": {

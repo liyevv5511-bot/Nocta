@@ -137,7 +137,7 @@ jobs:
       - name: Start services
         run: |
           npm run dev:server &
-          npx vite preview --port 4173 --strictPort &
+          npm run serve &
           npx wait-on http://localhost:4173 http://localhost:8787/api/health
 
       - name: Lighthouse CI

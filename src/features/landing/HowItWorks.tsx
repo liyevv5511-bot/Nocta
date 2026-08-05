@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-import { gsap, useGsapContext } from '@/lib/useGsapScroll';
+import { useGsapContext } from '@/lib/useGsapScroll';
 
 const STEPS = [
   {
@@ -34,7 +34,7 @@ const STEPS = [
 export function HowItWorks(): React.ReactElement {
   const root = useRef<HTMLElement>(null);
 
-  useGsapContext(root, () => {
+  useGsapContext(root, (gsap) => {
     const steps = gsap.utils.toArray<HTMLElement>('[data-step]');
 
     steps.forEach((step) => {

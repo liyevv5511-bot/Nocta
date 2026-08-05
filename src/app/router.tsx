@@ -1,51 +1,57 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 
-import { RouteErrorBoundary } from './error-boundary';
 import { RootLayout } from './RootLayout';
+import { RouteErrorBoundary } from './error-boundary';
 import { RouteFallback } from './RouteFallback';
+import { ROUTES } from './routes';
 
 /**
- * Routes.
+ * The browser router.
  *
- * Every route is `lazy()`, including the landing page. That looks excessive
- * until you look at what the landing page pulls in — GSAP, the globe, the
- * scroll choreography — none of which belongs in the entry chunk that gates
- * first paint. The entry bundle is the shell, the header and the router; the
- * rest arrives per route.
+ * Routes are code-split with `React.lazy`, so no route's chunk is in the entry
+ * bundle. One exception is load-bearing: the route being visited *right now*
+ * can be handed in already resolved, and is then mounted without a Suspense
+ * boundary.
  *
- * `Suspense` sits *inside* the layout so the header and skip-link render
- * immediately and stay put across navigations, which keeps CLS at zero during
- * a route change and gives keyboard users something to land on.
+ * That exception exists because of prerendering. React 19 emits every Suspense
+ * boundary's content out-of-order — appended in a hidden block and moved into
+ * place by an inline script — whether or not it actually suspended. A
+ * prerendered file built that way needs JavaScript to assemble itself, which
+ * is precisely the audience prerendering serves. `main.tsx` therefore awaits
+ * the matching module before hydrating, and both sides render the same
+ * boundary-free tree.
+ *
+ * Every *other* route keeps its boundary; they are only reached by navigation,
+ * where a fallback is exactly what you want.
  */
 
-const Landing = lazy(async () => ({ default: (await import('@/routes/Landing')).Landing }));
-const Plan = lazy(async () => ({ default: (await import('@/routes/Plan')).Plan }));
-const Trip = lazy(async () => ({ default: (await import('@/routes/Trip')).Trip }));
-const SavedTrips = lazy(async () => ({ default: (await import('@/routes/Saved')).Saved }));
-const Styleguide = lazy(async () => ({
-  default: (await import('@/routes/Styleguide')).Styleguide,
-}));
-const NotFound = lazy(async () => ({ default: (await import('@/routes/NotFound')).NotFound }));
+export interface PreloadedRoute {
+  path: string;
+  Component: ComponentType;
+}
 
-function withSuspense(node: React.ReactNode): React.ReactElement {
+function withSuspense(node: ReactNode): React.ReactElement {
   return <Suspense fallback={<RouteFallback />}>{node}</Suspense>;
 }
 
-const routes: RouteObject[] = [
-  {
-    path: '/',
-    element: <RootLayout />,
-    errorElement: <RouteErrorBoundary />,
-    children: [
-      { index: true, element: withSuspense(<Landing />) },
-      { path: 'plan', element: withSuspense(<Plan />) },
-      { path: 'trip/:tripId', element: withSuspense(<Trip />) },
-      { path: 'saved', element: withSuspense(<SavedTrips />) },
-      { path: 'styleguide', element: withSuspense(<Styleguide />) },
-      { path: '*', element: withSuspense(<NotFound />) },
-    ],
-  },
-];
+export function buildRouteObjects(preloaded?: PreloadedRoute): RouteObject[] {
+  return ROUTES.map((route) => {
+    const isPreloaded = preloaded?.path === route.path;
+    const Component = isPreloaded ? preloaded.Component : lazy(route.importer);
+    const element = isPreloaded ? <Component /> : withSuspense(<Component />);
 
-export const router = createBrowserRouter(routes);
+    return route.path === '' ? { index: true, element } : { path: route.path, element };
+  });
+}
+
+export function createAppRouter(preloaded?: PreloadedRoute) {
+  return createBrowserRouter([
+    {
+      path: '/',
+      element: <RootLayout />,
+      errorElement: <RouteErrorBoundary />,
+      children: buildRouteObjects(preloaded),
+    },
+  ]);
+}

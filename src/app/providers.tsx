@@ -1,13 +1,14 @@
 import { MotionConfig } from 'framer-motion';
 import { useEffect } from 'react';
-import { RouterProvider } from 'react-router-dom';
+import { RouterProvider, type createBrowserRouter } from 'react-router-dom';
 
 import { watchSystemTheme } from '@/features/theme/theme.store';
 import { ToastViewport } from '@/features/ui';
 import { EASE, DURATION } from '@/lib/motion';
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion';
 
-import { router } from './router';
+/** Either a browser router (the app) or a memory router (the prerenderer). */
+export type AppRouter = ReturnType<typeof createBrowserRouter>;
 
 /**
  * Global providers.
@@ -21,8 +22,15 @@ import { router } from './router';
  *    motion as a convention.
  *  - the default transition means a component that omits one still lands on
  *    the house curve rather than Framer's default spring.
+ *
+ * The router is injected rather than imported. `router.tsx` calls
+ * `createBrowserRouter` at module scope, which needs a `window`; the
+ * prerenderer hands in a memory router instead. That the two share this
+ * component is the point — the server must render the identical tree, down to
+ * the toast layer, or hydration finds a different set of children at the root
+ * and discards everything below it.
  */
-export function AppProviders(): React.ReactElement {
+export function AppProviders({ router }: { router: AppRouter }): React.ReactElement {
   const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => watchSystemTheme(), []);

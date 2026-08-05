@@ -56,6 +56,7 @@ export function Plan(): React.ReactElement {
         title="Plan a trip"
         description="Pick a city, how long you have, what you are in the mood for and what you want to spend. Nocta streams back an hour-by-hour itinerary you can rearrange."
         path="/plan"
+        ogImage="https://nocta.travel/og/plan.png"
       />
 
       <div className="container-content py-14 lg:py-20">

@@ -56,10 +56,7 @@ export default tseslint.config(
       // The 200-line component rule, enforced rather than documented.
       // Blank lines and comments are excluded: a well-explained component
       // should not be punished for the explanation.
-      'max-lines': [
-        'error',
-        { max: 200, skipBlankLines: true, skipComments: true },
-      ],
+      'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always'],
     },
@@ -78,8 +75,16 @@ export default tseslint.config(
   {
     // The server and the build scripts report to a terminal — stdout is their
     // output channel, not a debugging leftover.
-    files: ['server/**/*.ts', 'scripts/**/*.ts'],
+    files: ['server/**/*.{ts,tsx}', 'scripts/**/*.{ts,tsx}'],
     rules: { 'no-console': 'off', 'max-lines': 'off' },
+  },
+  {
+    // The Open Graph card is rendered by Satori, which lays out a subset of
+    // flexbox and has no notion of CSS custom properties — `var(--accent)`
+    // renders as nothing. The palette there is a documented, single-file
+    // duplicate of the dark theme, which is the honest trade.
+    files: ['scripts/og.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
   },
   {
     // The venue catalogue is data, not logic. It is long because the content

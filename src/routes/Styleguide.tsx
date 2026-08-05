@@ -44,6 +44,7 @@ export function Styleguide(): React.ReactElement {
         title="Styleguide"
         description="Every design token, UI primitive and motion variant used in Nocta, documented and live."
         path="/styleguide"
+        ogImage="https://nocta.travel/og/styleguide.png"
       />
 
       <div className="container-content py-14 lg:py-20">

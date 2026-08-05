@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { CITIES } from '@/data/cities';
 import { Photo } from '@/features/ui';
 import { formatCurrency } from '@/lib/format';
-import { gsap, useGsapContext } from '@/lib/useGsapScroll';
+import { useGsapContext } from '@/lib/useGsapScroll';
 
 /**
  * Horizontal scroll gallery.
@@ -25,7 +25,7 @@ export function CityGallery(): React.ReactElement {
   const root = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
 
-  useGsapContext(root, () => {
+  useGsapContext(root, (gsap) => {
     const track = trackRef.current;
     const section = root.current;
     if (!track || !section) return;
@@ -68,7 +68,7 @@ export function CityGallery(): React.ReactElement {
         {CITIES.map((city) => (
           <li key={city.id} className="w-[78vw] shrink-0 sm:w-[22rem]">
             <Link
-              to={`/plan?destination=${encodeURIComponent(city.name)}`}
+              to={`/destination/${city.id}`}
               className="group block overflow-hidden rounded-xl border border-subtle bg-surface transition-colors hover:border-default"
             >
               <Photo

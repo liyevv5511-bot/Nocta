@@ -11,7 +11,7 @@ const BASE_URL = `http://localhost:${String(PORT)}`;
  * missing chunk or a route that 404s under the SPA fallback — which are
  * exactly the failures worth catching before a deploy.
  *
- * Two servers, because the app is two processes: the static preview and the
+ * Two servers, because the app is two processes: the static host and the
  * planner. Playwright starts both and waits for each to answer.
  */
 export default defineConfig({
@@ -54,8 +54,13 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      command: `npm run preview -- --port ${String(PORT)} --strictPort`,
+      // `scripts/serve.ts`, not `vite preview`: the latter does not resolve
+      // `/destination/lisbon` to that directory's `index.html`, so every
+      // prerendered page fell through to the SPA fallback and the suite tested
+      // the landing page over and over while reporting green.
+      command: `npm run serve`,
       url: BASE_URL,
+      env: { PORT: String(PORT) },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

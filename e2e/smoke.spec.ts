@@ -13,6 +13,7 @@ const ROUTES = [
   { path: '/plan', heading: /Build the trip\./ },
   { path: '/saved', heading: /Your trips\./ },
   { path: '/styleguide', heading: /Every token, live\./ },
+  { path: '/destination/lisbon', heading: /^Lisbon$/ },
 ] as const;
 
 test.describe('routes', () => {
@@ -66,7 +67,11 @@ test.describe('theme', () => {
   test('the toggle switches themes and persists the choice', async ({ page }) => {
     await page.goto('/styleguide');
 
-    await page.getByRole('radio', { name: 'Dark theme' }).click();
+    // Scoped to the page's own control rather than the header's: the
+    // styleguide documents the toggle, so two exist — and the header's is
+    // collapsed into the menu below the `sm` breakpoint, where this suite also
+    // runs.
+    await page.getByRole('main').getByRole('radio', { name: 'Dark theme' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
     await page.reload();
@@ -104,7 +109,7 @@ test.describe('accessibility', () => {
 
     await lisbon.click();
     await expect(lisbon).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByRole('link', { name: 'Plan Lisbon' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'About Lisbon' })).toBeVisible();
   });
 
   test('every page has exactly one h1 and a main landmark', async ({ page }) => {
@@ -113,5 +118,91 @@ test.describe('accessibility', () => {
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       await expect(page.getByRole('main')).toHaveCount(1);
     }
+  });
+});
+
+/**
+ * Prerendering.
+ *
+ * Asserted with JavaScript switched off, which is the only way to prove the
+ * markup came from the build rather than from the client router a moment
+ * later. This is what a link unfurler, a text browser, and a crawler that does
+ * not execute scripts actually receive.
+ */
+test.describe('prerendered HTML', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the landing page has its content, not an empty shell', async ({ page }) => {
+    await page.goto('/');
+
+    // Element selectors rather than roles: with scripting off there is no
+    // hydration, and the question being asked is "did the build put this in
+    // the response", which is a DOM question.
+    await expect(page.locator('h1')).toContainText(
+      'Itineraries that read like a local wrote them.',
+    );
+
+    // Below the fold, behind its own lazy boundary — the renderer waited for it.
+    await expect(page.locator('#faq-heading')).toHaveText('The obvious questions.');
+
+    // And it is actually legible: Framer's initial state is opacity 0, so
+    // without the noscript stylesheet this markup would render invisible.
+    await expect(page.locator('h1')).toBeVisible();
+  });
+
+  test('a destination page carries its own metadata and its city card', async ({ page }) => {
+    await page.goto('/destination/reykjavik');
+
+    await expect(page).toHaveTitle(/Reykjavík, Iceland/);
+    await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://nocta.travel/destination/reykjavik',
+    );
+    await expect(page.locator('head meta[property="og:image"]')).toHaveAttribute(
+      'content',
+      'https://nocta.travel/og/city-reykjavik.png',
+    );
+    await expect(page.locator('h1')).toHaveText('Reykjavík');
+  });
+
+  test('every destination page describes itself distinctly', async ({ page }) => {
+    const seen = new Set<string>();
+
+    for (const city of ['lisbon', 'tokyo', 'marrakesh']) {
+      await page.goto(`/destination/${city}`);
+      const description = await page
+        .locator('head meta[name="description"]')
+        .getAttribute('content');
+
+      expect(description, `${city} has a description`).toBeTruthy();
+      expect(seen.has(description ?? ''), `${city} description is unique`).toBe(false);
+      seen.add(description ?? '');
+    }
+  });
+
+  test('structured data is emitted for a destination', async ({ page }) => {
+    await page.goto('/destination/kyoto');
+
+    const blocks = await page.locator('head script[type="application/ld+json"]').allTextContents();
+    const parsed = blocks.map((block) => JSON.parse(block) as { '@type'?: string; name?: string });
+
+    const destination = parsed.find((entry) => entry['@type'] === 'TouristDestination');
+    expect(destination?.name).toBe('Kyoto');
+  });
+
+  test('the Open Graph card is a real image', async ({ request }) => {
+    const response = await request.get('/og/city-tokyo.png');
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('image/png');
+    // A blank or failed render would be a few hundred bytes.
+    expect((await response.body()).byteLength).toBeGreaterThan(20_000);
+  });
+
+  test('the sitemap lists the destination paths', async ({ request }) => {
+    const sitemap = await (await request.get('/sitemap.xml')).text();
+
+    expect(sitemap).toContain('<loc>https://nocta.travel/destination/lisbon</loc>');
+    expect(sitemap).not.toContain('?destination=');
   });
 });
