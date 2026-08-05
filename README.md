@@ -3,7 +3,7 @@
 An AI travel planner that streams an hour-by-hour itinerary with real venues, computed walking
 times, and a plan you can take apart.
 
-[![CI](https://github.com/OWNER/nocta/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/nocta/actions/workflows/ci.yml)
+[![CI](https://github.com/liyevv5511-bot/Nocta/actions/workflows/ci.yml/badge.svg)](https://github.com/liyevv5511-bot/Nocta/actions/workflows/ci.yml)
 
 ```bash
 npm install
