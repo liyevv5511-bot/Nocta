@@ -1,12 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useState } from 'react';
-
 import { Chip, Photo } from '@/features/ui';
+import { IconGrip, IconWalk } from '@/features/ui/icons';
 import { cn } from '@/lib/cn';
 import { formatDuration, formatPrice, formatTime } from '@/lib/format';
 import type { ActivityBlock, ActivityKind } from '@/types/itinerary';
 
+import { ActivityMenu } from './ActivityMenu';
 import { KIND_META } from './kinds';
 
 export interface ActivityCardProps {
@@ -35,7 +35,6 @@ export function ActivityCard({
   onRemove,
   sortable,
 }: ActivityCardProps): React.ReactElement {
-  const [menuOpen, setMenuOpen] = useState(false);
   const kind = KIND_META[block.kind];
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -98,49 +97,15 @@ export function ActivityCard({
               <h4 className="mt-1 text-h3 leading-snug text-primary">{block.title}</h4>
             </div>
 
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                aria-label={`Options for ${block.title}`}
-                aria-expanded={menuOpen}
-                onClick={() => {
-                  setMenuOpen((open) => !open);
-                }}
-                className="rounded-xs p-1.5 text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:text-primary focus-visible:opacity-100"
-              >
-                <IconDots />
-              </button>
-
-              {menuOpen ? (
-                <div
-                  role="menu"
-                  className="glass absolute top-9 right-0 z-20 w-44 overflow-hidden rounded-md py-1"
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onSwap(block.id, block.kind);
-                    }}
-                    className="block w-full px-3.5 py-2 text-left text-sm text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-                  >
-                    Swap this
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onRemove(block.id);
-                    }}
-                    className="block w-full px-3.5 py-2 text-left text-sm text-danger transition-colors hover:bg-surface-hover"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <ActivityMenu
+              label={block.title}
+              onSwap={() => {
+                onSwap(block.id, block.kind);
+              }}
+              onRemove={() => {
+                onRemove(block.id);
+              }}
+            />
           </div>
 
           <p className="mt-2 text-sm leading-relaxed text-secondary">{block.summary}</p>
@@ -185,47 +150,4 @@ function mapLink(block: ActivityBlock): string {
   const { lat, lng } = block.place.coordinates;
   const query = encodeURIComponent(`${block.place.name}, ${block.place.address}`);
   return `https://www.google.com/maps/search/?api=1&query=${query}&center=${String(lat)},${String(lng)}`;
-}
-
-function IconWalk(): React.ReactElement {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="size-3"
-      fill="none"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <circle cx="13" cy="4.5" r="1.75" strokeWidth="1.75" />
-      <path
-        d="M9 21l2.5-5.5L9 12l1-4 3.5 2 2.5 1M11.5 15.5L15 21"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconGrip(): React.ReactElement {
-  return (
-    <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden="true">
-      <circle cx="9" cy="6" r="1.4" />
-      <circle cx="15" cy="6" r="1.4" />
-      <circle cx="9" cy="12" r="1.4" />
-      <circle cx="15" cy="12" r="1.4" />
-      <circle cx="9" cy="18" r="1.4" />
-      <circle cx="15" cy="18" r="1.4" />
-    </svg>
-  );
-}
-
-function IconDots(): React.ReactElement {
-  return (
-    <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden="true">
-      <circle cx="12" cy="5" r="1.6" />
-      <circle cx="12" cy="12" r="1.6" />
-      <circle cx="12" cy="19" r="1.6" />
-    </svg>
-  );
 }

@@ -53,6 +53,13 @@ export default tseslint.config(
           ignoreRestSiblings: true,
         },
       ],
+      // The 200-line component rule, enforced rather than documented.
+      // Blank lines and comments are excluded: a well-explained component
+      // should not be punished for the explanation.
+      'max-lines': [
+        'error',
+        { max: 200, skipBlankLines: true, skipComments: true },
+      ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always'],
     },
@@ -63,13 +70,23 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      // A thorough suite is long by nature; splitting it to satisfy a line
+      // count would scatter related assertions across files.
+      'max-lines': 'off',
     },
   },
   {
     // The server and the build scripts report to a terminal — stdout is their
     // output channel, not a debugging leftover.
     files: ['server/**/*.ts', 'scripts/**/*.ts'],
-    rules: { 'no-console': 'off' },
+    rules: { 'no-console': 'off', 'max-lines': 'off' },
+  },
+  {
+    // The venue catalogue is data, not logic. It is long because the content
+    // is real; splitting it per city would trade one honest long file for
+    // eight short ones and an index.
+    files: ['src/data/venues.ts', 'src/data/cities.ts'],
+    rules: { 'max-lines': 'off' },
   },
   {
     // Config files are plain JS and outside the TS program — typed rules

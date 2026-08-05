@@ -1,4 +1,6 @@
 export { ActivityCard, type ActivityCardProps } from './ActivityCard';
+export { ActivityMenu, type ActivityMenuProps } from './ActivityMenu';
+export { DestinationCombobox } from './DestinationCombobox';
 export { DayColumn, type DayColumnProps } from './DayColumn';
 export { GenerationStatus } from './GenerationStatus';
 export { ItineraryTimeline } from './ItineraryTimeline';
@@ -17,4 +19,10 @@ export {
   tripTotals,
   type DayTotals,
 } from './itinerary.reducer';
-export { DEFAULT_DRAFT, usePlanStore, type DraftRequest, type GenerationPhase } from './plan.store';
+export {
+  DEFAULT_DRAFT,
+  usePlanStore,
+  type DraftRequest,
+  type GenerationPhase,
+  type PlanState,
+} from './plan.store';
