@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { IconDots } from '@/features/ui/icons';
 
@@ -22,6 +23,7 @@ export interface ActivityMenuProps {
  * the user back at the top of the document.
  */
 export function ActivityMenu({ label, onSwap, onRemove }: ActivityMenuProps): React.ReactElement {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -56,7 +58,7 @@ export function ActivityMenu({ label, onSwap, onRemove }: ActivityMenuProps): Re
       <button
         ref={triggerRef}
         type="button"
-        aria-label={`Options for ${label}`}
+        aria-label={t('itinerary.options', { title: label })}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => {
@@ -81,7 +83,7 @@ export function ActivityMenu({ label, onSwap, onRemove }: ActivityMenuProps): Re
             }}
             className="block w-full px-3.5 py-2 text-left text-sm text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
           >
-            Swap this
+            {t('itinerary.swap')}
           </button>
           <button
             type="button"
@@ -92,7 +94,7 @@ export function ActivityMenu({ label, onSwap, onRemove }: ActivityMenuProps): Re
             }}
             className="block w-full px-3.5 py-2 text-left text-sm text-danger transition-colors hover:bg-surface-hover"
           >
-            Remove
+            {t('itinerary.remove')}
           </button>
         </div>
       ) : null}

@@ -1,24 +1,7 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useGsapContext } from '@/lib/useGsapScroll';
-
-const STEPS = [
-  {
-    number: '01',
-    title: 'Describe the trip, not the itinerary',
-    body: 'A city, how many days, what you are in the mood for, and what you are willing to spend per day. Five inputs. No forms about airport preferences.',
-  },
-  {
-    number: '02',
-    title: 'Watch it get built',
-    body: 'The planner streams its work back as it goes — which venues it is reading, how it is weighting your moods, where it is optimising the walking. Days arrive one at a time, not as a spinner that ends in a wall of text.',
-  },
-  {
-    number: '03',
-    title: 'Argue with it',
-    body: 'Drag activities into a different order and the day re-times around them, walking legs included. Swap anything you do not like for a real alternative. Save it, share it, print it.',
-  },
-] as const;
 
 /**
  * Pinned scroll section.
@@ -32,7 +15,9 @@ const STEPS = [
  * teardown is total. Nothing here is registered globally.
  */
 export function HowItWorks(): React.ReactElement {
+  const { t } = useTranslation();
   const root = useRef<HTMLElement>(null);
+  const steps = t('howItWorks.steps', { returnObjects: true });
 
   useGsapContext(root, (gsap) => {
     const steps = gsap.utils.toArray<HTMLElement>('[data-step]');
@@ -87,14 +72,11 @@ export function HowItWorks(): React.ReactElement {
     >
       <div className="container-content grid gap-12 lg:grid-cols-[22rem_1fr] lg:gap-20">
         <div data-pin className="lg:sticky lg:top-32 lg:h-fit">
-          <p className="eyebrow">How it works</p>
+          <p className="eyebrow">{t('howItWorks.eyebrow')}</p>
           <h2 id="how-heading" className="mt-4 text-display-2 text-primary">
-            Three steps, and one of them is optional.
+            {t('howItWorks.heading')}
           </h2>
-          <p className="mt-5 max-w-sm text-body-lg text-secondary">
-            Most planners hand you a wall of suggestions and call it an itinerary. This one commits
-            to a schedule, shows its reasoning, and then lets you take it apart.
-          </p>
+          <p className="mt-5 max-w-sm text-body-lg text-secondary">{t('howItWorks.body')}</p>
         </div>
 
         <ol className="relative space-y-16 lg:space-y-28">
@@ -109,9 +91,11 @@ export function HowItWorks(): React.ReactElement {
             />
           </span>
 
-          {STEPS.map((step) => (
-            <li key={step.number} data-step className="lg:pl-10">
-              <p className="font-mono text-mono-xs tracking-[0.09em] text-accent">{step.number}</p>
+          {steps.map((step, index) => (
+            <li key={step.title} data-step className="lg:pl-10">
+              <p className="font-mono text-mono-xs tracking-[0.09em] text-accent">
+                {String(index + 1).padStart(2, '0')}
+              </p>
               <h3 className="mt-3 text-h1 text-primary">{step.title}</h3>
               <p className="mt-4 max-w-prose text-body-lg text-secondary">{step.body}</p>
             </li>

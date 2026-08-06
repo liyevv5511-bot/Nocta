@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 import { CITIES } from '@/data/cities';
 import { Button, Chip, GlassPanel } from '@/features/ui';
-import { formatCurrency, formatDuration } from '@/lib/format';
+import { useLocale } from '@/i18n/useLocale';
+import { formatCurrency, formatDuration, formatNumber } from '@/lib/format';
 import { fadeUp, stagger } from '@/lib/motion';
 
 import { MAX_ROUTE_CITIES } from './route.model';
@@ -19,6 +21,8 @@ import { useRoute } from './useRoute';
  * shareable.
  */
 export function RouteBuilder(): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const route = useRoute();
   const { summary } = route;
 
@@ -32,16 +36,14 @@ export function RouteBuilder(): React.ReactElement {
       <motion.div variants={fadeUp}>
         <GlassPanel radius="xl" className="p-6">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-h3 text-primary">Your route</h2>
+            <h2 className="text-h3 text-primary">{t('route.yourRoute')}</h2>
             <p className="tabular text-sm text-tertiary">
-              {summary.stops.length} of {MAX_ROUTE_CITIES}
+              {t('route.counter', { count: summary.stops.length, max: MAX_ROUTE_CITIES })}
             </p>
           </div>
 
           {summary.stops.length === 0 ? (
-            <p className="mt-4 text-body text-secondary">
-              Add a city below and the map will start drawing.
-            </p>
+            <p className="mt-4 text-body text-secondary">{t('route.empty')}</p>
           ) : (
             <div className="mt-5">
               <RouteStops
@@ -59,41 +61,46 @@ export function RouteBuilder(): React.ReactElement {
       {summary.stops.length === 0 ? null : (
         <motion.div variants={fadeUp}>
           <GlassPanel radius="xl" className="p-6">
-            <h2 className="eyebrow">The whole trip</h2>
+            <h2 className="eyebrow">{t('route.wholeTrip')}</h2>
 
             <dl className="mt-4 grid grid-cols-2 gap-5">
               <Figure
-                label="Length"
-                value={`${String(summary.days)} days`}
-                note={`${String(summary.nights)} nights, ${String(summary.legs.length)} in transit`}
+                label={t('route.length')}
+                value={t('common.days', { count: summary.days })}
+                note={t('route.lengthNote', {
+                  nights: summary.nights,
+                  legs: summary.legs.length,
+                })}
               />
               <Figure
-                label="Ground covered"
-                value={`${summary.distanceKm.toLocaleString('en-GB')} km`}
+                label={t('route.ground')}
+                value={`${formatNumber(summary.distanceKm, locale)} km`}
                 note={
                   summary.legs.length === 0
-                    ? 'a single city'
-                    : `${formatDuration(summary.travelMinutes)} travelling`
+                    ? t('route.singleCity')
+                    : t('route.groundNote', {
+                        duration: formatDuration(summary.travelMinutes, locale),
+                      })
                 }
               />
               <Figure
-                label="Rough cost"
-                value={formatCurrency(summary.estimatedCost, summary.currency)}
-                note="lodging and living, per person"
+                label={t('route.cost')}
+                value={formatCurrency(summary.estimatedCost, summary.currency, locale)}
+                note={t('route.costNote')}
               />
               <Figure
-                label="Per day"
+                label={t('route.perDay')}
                 value={formatCurrency(
                   Math.round(summary.estimatedCost / Math.max(1, summary.nights)),
                   summary.currency,
+                  locale,
                 )}
-                note="averaged across the stops"
+                note={t('route.perDayNote')}
               />
             </dl>
 
             <p className="mt-5 border-t border-subtle pt-4 text-sm text-tertiary">
-              Nights come from how much each city has in the catalogue, not from a fixed number.
-              Transit days are counted — you do not land and start sightseeing.
+              {t('route.method')}
             </p>
           </GlassPanel>
         </motion.div>
@@ -103,9 +110,9 @@ export function RouteBuilder(): React.ReactElement {
       <motion.div variants={fadeUp}>
         <GlassPanel radius="xl" className="p-6">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 className="eyebrow">Add a city</h2>
+            <h2 className="eyebrow">{t('route.addCity')}</h2>
             <Button variant="ghost" size="sm" onClick={route.reset}>
-              Reset
+              {t('route.reset')}
             </Button>
           </div>
 
@@ -129,11 +136,7 @@ export function RouteBuilder(): React.ReactElement {
             })}
           </div>
 
-          {route.isFull ? (
-            <p className="mt-4 text-sm text-warning">
-              Six stops is the limit. Beyond that it stops being a trip and starts being a tour.
-            </p>
-          ) : null}
+          {route.isFull ? <p className="mt-4 text-sm text-warning">{t('route.full')}</p> : null}
         </GlassPanel>
       </motion.div>
     </motion.div>

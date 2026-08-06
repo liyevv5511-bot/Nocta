@@ -10,6 +10,7 @@ import {
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { DayColumnSkeleton, toast } from '@/features/ui';
 import type { ActivityKind, Itinerary } from '@/types/itinerary';
@@ -49,6 +50,7 @@ export function ItineraryTimeline({
   expectedDays,
   streaming,
 }: ItineraryTimelineProps): React.ReactElement {
+  const { t } = useTranslation();
   const reorder = usePlanStore((state) => state.reorder);
   const dropBlock = usePlanStore((state) => state.dropBlock);
   const [swapTarget, setSwapTarget] = useState<SwapTarget | null>(null);
@@ -82,13 +84,13 @@ export function ItineraryTimeline({
     (dayId: string, blockId: string) => {
       const day = itinerary.days.find((candidate) => candidate.id === dayId);
       if (day && day.blocks.length <= 1) {
-        toast.warning('That is the last activity', 'A day cannot be left empty — swap it instead.');
+        toast.warning(t('itinerary.lastActivity'), t('itinerary.lastActivityBody'));
         return;
       }
       dropBlock(dayId, blockId);
-      toast.success('Removed', 'The rest of the day has been re-timed around it.');
+      toast.success(t('itinerary.removed'), t('itinerary.removedBody'));
     },
-    [itinerary.days, dropBlock],
+    [itinerary.days, dropBlock, t],
   );
 
   const pendingDays = Math.max(0, expectedDays - itinerary.days.length);
@@ -102,14 +104,13 @@ export function ItineraryTimeline({
         onDragEnd={handleDragEnd}
         accessibility={{
           announcements: {
-            onDragStart: ({ active }) => `Picked up ${String(active.id)}.`,
+            onDragStart: ({ active }) => t('itinerary.dragStart', { title: String(active.id) }),
             onDragOver: ({ over }) =>
-              over ? `Now over position of ${String(over.id)}.` : 'No longer over a drop target.',
-            onDragEnd: ({ over }) =>
               over
-                ? 'Dropped. The day has been re-timed around the new order.'
-                : 'Dropped outside the list. Nothing changed.',
-            onDragCancel: () => 'Reorder cancelled.',
+                ? t('itinerary.dragOver', { title: String(over.id) })
+                : t('itinerary.dragOutside'),
+            onDragEnd: ({ over }) => (over ? t('itinerary.dragEnd') : t('itinerary.dragOutside')),
+            onDragCancel: () => t('itinerary.dragCancel'),
           },
         }}
       >

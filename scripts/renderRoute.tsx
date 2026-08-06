@@ -8,6 +8,7 @@ import { RouteErrorBoundary } from '../src/app/error-boundary';
 import { AppProviders } from '../src/app/providers';
 import { buildRouteObjects } from '../src/app/router';
 import { matchRoute } from '../src/app/routes';
+import { DEFAULT_LANGUAGE, initI18n } from '../src/i18n';
 
 /**
  * Renders one route to HTML, exactly as the build does.
@@ -78,6 +79,11 @@ export async function renderRouteToHtml(path: string): Promise<string> {
 }
 
 async function renderOnce(path: string): Promise<string> {
+  // The prerendered HTML is English — `main.tsx` skips hydration and renders
+  // fresh for anyone whose language differs, rather than hydrating one
+  // language's DOM with another's tree.
+  await initI18n(DEFAULT_LANGUAGE);
+
   const route = matchRoute(path);
   if (!route) throw new Error(`No route matches ${path}`);
 

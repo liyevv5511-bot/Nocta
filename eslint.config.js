@@ -87,6 +87,13 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': 'off' },
   },
   {
+    // Dictionaries are content, not logic. A 200-line ceiling on a file whose
+    // entire job is to hold every string in the product would only force it
+    // into arbitrary fragments and make a missing key harder to spot.
+    files: ['src/i18n/*.ts'],
+    rules: { 'max-lines': 'off' },
+  },
+  {
     // The venue catalogue is data, not logic. It is long because the content
     // is real; splitting it per city would trade one honest long file for
     // eight short ones and an index.

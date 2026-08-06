@@ -8,60 +8,65 @@ import type { ActivityKind, Mood } from '@/types/itinerary';
  * ad-hoc one made inside a component.
  */
 export interface KindMeta {
-  label: string;
+  /** Dictionary key; the label itself is translated at render time. */
+  labelKey: `kinds.${ActivityKind}`;
   textClass: string;
   dotClass: string;
 }
 
 export const KIND_META: Record<ActivityKind, KindMeta> = {
-  landmark: { label: 'Landmark', textClass: 'text-accent', dotClass: 'bg-accent' },
-  museum: { label: 'Museum', textClass: 'text-accent-alt', dotClass: 'bg-accent-alt' },
-  food: { label: 'Meal', textClass: 'text-accent-warm', dotClass: 'bg-accent-warm' },
-  cafe: { label: 'Coffee', textClass: 'text-accent-warm', dotClass: 'bg-accent-warm' },
-  nightlife: { label: 'Nightlife', textClass: 'text-accent-alt', dotClass: 'bg-accent-alt' },
-  nature: { label: 'Outdoors', textClass: 'text-success', dotClass: 'bg-success' },
-  shopping: { label: 'Shopping', textClass: 'text-secondary', dotClass: 'bg-secondary' },
-  transit: { label: 'Getting there', textClass: 'text-tertiary', dotClass: 'bg-tertiary' },
-  stay: { label: 'Stay', textClass: 'text-secondary', dotClass: 'bg-secondary' },
-  experience: { label: 'Experience', textClass: 'text-accent', dotClass: 'bg-accent' },
+  landmark: { labelKey: 'kinds.landmark', textClass: 'text-accent', dotClass: 'bg-accent' },
+  museum: { labelKey: 'kinds.museum', textClass: 'text-accent-alt', dotClass: 'bg-accent-alt' },
+  food: { labelKey: 'kinds.food', textClass: 'text-accent-warm', dotClass: 'bg-accent-warm' },
+  cafe: { labelKey: 'kinds.cafe', textClass: 'text-accent-warm', dotClass: 'bg-accent-warm' },
+  nightlife: {
+    labelKey: 'kinds.nightlife',
+    textClass: 'text-accent-alt',
+    dotClass: 'bg-accent-alt',
+  },
+  nature: { labelKey: 'kinds.nature', textClass: 'text-success', dotClass: 'bg-success' },
+  shopping: { labelKey: 'kinds.shopping', textClass: 'text-secondary', dotClass: 'bg-secondary' },
+  transit: { labelKey: 'kinds.transit', textClass: 'text-tertiary', dotClass: 'bg-tertiary' },
+  stay: { labelKey: 'kinds.stay', textClass: 'text-secondary', dotClass: 'bg-secondary' },
+  experience: { labelKey: 'kinds.experience', textClass: 'text-accent', dotClass: 'bg-accent' },
 };
 
 export interface MoodMeta {
-  label: string;
-  description: string;
+  labelKey: `moods.${Mood}`;
+  descriptionKey: `moods.${Mood}Detail`;
   icon: string;
 }
 
-/** The atmosphere chips on the planning form. */
+/** The atmosphere chips on the planning form. Copy lives in the dictionary. */
 export const MOOD_META: Record<Mood, MoodMeta> = {
   relax: {
-    label: 'Relax',
-    description: 'Fewer stops, longer sits, nothing before nine.',
+    labelKey: 'moods.relax',
+    descriptionKey: 'moods.relaxDetail',
     icon: '◐',
   },
   adventure: {
-    label: 'Adventure',
-    description: 'Hikes, day trips, and things that need proper shoes.',
+    labelKey: 'moods.adventure',
+    descriptionKey: 'moods.adventureDetail',
     icon: '▲',
   },
   food: {
-    label: 'Food',
-    description: 'Markets, counters, and dinners worth planning the day around.',
+    labelKey: 'moods.food',
+    descriptionKey: 'moods.foodDetail',
     icon: '●',
   },
   culture: {
-    label: 'Culture',
-    description: 'Museums, architecture, and the buildings people argue about.',
+    labelKey: 'moods.culture',
+    descriptionKey: 'moods.cultureDetail',
     icon: '◼',
   },
   nightlife: {
-    label: 'Nightlife',
-    description: 'Bars, live music, and a finish after midnight.',
+    labelKey: 'moods.nightlife',
+    descriptionKey: 'moods.nightlifeDetail',
     icon: '◆',
   },
   nature: {
-    label: 'Nature',
-    description: 'Parks, coastline, and somewhere green to stop.',
+    labelKey: 'moods.nature',
+    descriptionKey: 'moods.natureDetail',
     icon: '❋',
   },
 };

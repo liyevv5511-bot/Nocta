@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Seo } from '@/app/Seo';
@@ -27,6 +28,7 @@ import { TripSummary } from './plan/TripSummary';
  * site lands here pre-filled.
  */
 export function Plan(): React.ReactElement {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -62,12 +64,9 @@ export function Plan(): React.ReactElement {
 
       <div className="container-content py-14 lg:py-20">
         <header className="max-w-2xl">
-          <p className="eyebrow">Planner</p>
-          <h1 className="mt-4 text-display-2 text-primary">Build the trip.</h1>
-          <p className="mt-4 text-body-lg text-secondary">
-            Five inputs. The planner streams its reasoning as it works, then hands you something you
-            can take apart.
-          </p>
+          <p className="eyebrow">{t('plan.eyebrow')}</p>
+          <h1 className="mt-4 text-display-2 text-primary">{t('plan.heading')}</h1>
+          <p className="mt-4 text-body-lg text-secondary">{t('plan.body')}</p>
         </header>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[24rem_1fr] lg:gap-14">
@@ -99,9 +98,9 @@ export function Plan(): React.ReactElement {
 
             {phase === 'error' && itinerary === null ? (
               <GlassPanel radius="xl" className="p-8 text-center">
-                <p className="text-h3 text-primary">That did not work</p>
+                <p className="text-h3 text-primary">{t('plan.errorHeading')}</p>
                 <p className="mx-auto mt-3 max-w-prose text-body text-secondary">
-                  {error?.userMessage ?? 'The planner failed unexpectedly.'}
+                  {error?.userMessage ?? t('plan.errorFallback')}
                 </p>
                 {error?.retryable === true ? (
                   <Button
@@ -110,7 +109,7 @@ export function Plan(): React.ReactElement {
                       void generate();
                     }}
                   >
-                    Try again
+                    {t('common.tryAgain')}
                   </Button>
                 ) : null}
               </GlassPanel>
@@ -128,7 +127,7 @@ export function Plan(): React.ReactElement {
                   storageAvailable={available}
                   onSave={() => {
                     if (save(itinerary)) {
-                      toast.success('Trip saved', 'Find it under Saved, or share the link.');
+                      toast.success(t('plan.savedToast'), t('plan.savedToastBody'));
                       void navigate(`/trip/${itinerary.id}`);
                     }
                   }}

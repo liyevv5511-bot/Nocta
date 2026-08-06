@@ -7,6 +7,7 @@ import './styles/globals.css';
 import { AppProviders } from './app/providers';
 import { createAppRouter, type PreloadedRoute } from './app/router';
 import { matchRoute } from './app/routes';
+import { DEFAULT_LANGUAGE, detectLanguage, initI18n } from './i18n';
 
 const container = document.getElementById('root');
 
@@ -46,7 +47,17 @@ function wasPrerenderedForThisPath(): boolean {
  * prerendered file — mounts fresh and keeps the boundary.
  */
 async function mount(root: HTMLElement): Promise<void> {
-  if (!wasPrerenderedForThisPath() || !root.hasChildNodes()) {
+  const language = detectLanguage();
+  await initI18n(language);
+
+  // The prerendered HTML is English. Hydrating it with another language is a
+  // guaranteed mismatch — every string differs — so a visitor whose language
+  // is not English gets a clean client render instead. They pay one render;
+  // the alternative is React discarding the tree anyway, with an error.
+  const canHydrate =
+    language === DEFAULT_LANGUAGE && wasPrerenderedForThisPath() && root.hasChildNodes();
+
+  if (!canHydrate) {
     // Markup for a different route would otherwise sit in the DOM beneath the
     // new tree until React's first commit replaced it.
     root.replaceChildren();

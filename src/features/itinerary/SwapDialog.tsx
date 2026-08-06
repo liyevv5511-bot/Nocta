@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ActivityCardSkeleton, Button, GlassPanel, Photo, toast } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { formatDuration, formatPrice } from '@/lib/format';
 import { SPRING, transition } from '@/lib/motion';
 import { isApiError } from '@/types/api';
@@ -34,6 +36,8 @@ export function SwapDialog({
   currency,
   onClose,
 }: SwapDialogProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fetchAlternatives = usePlanStore((state) => state.fetchAlternatives);
   const swapBlock = usePlanStore((state) => state.swapBlock);
@@ -52,9 +56,9 @@ export function SwapDialog({
     fetchAlternatives(blockId, kind)
       .then(setAlternatives)
       .catch((error: unknown) => {
-        setFailed(isApiError(error) ? error.userMessage : 'Could not load alternatives.');
+        setFailed(isApiError(error) ? error.userMessage : t('itinerary.alternativesFailed'));
       });
-  }, [fetchAlternatives, blockId, kind]);
+  }, [fetchAlternatives, blockId, kind, t]);
 
   useEffect(load, [load]);
 
@@ -66,10 +70,13 @@ export function SwapDialog({
   const choose = useCallback(
     (replacement: ActivityBlock) => {
       swapBlock(dayId, blockId, replacement);
-      toast.success('Swapped', `${replacement.title} is now in that slot.`);
+      toast.success(
+        t('itinerary.swapped'),
+        t('itinerary.swappedBody', { title: replacement.title }),
+      );
       close();
     },
-    [swapBlock, dayId, blockId, close],
+    [swapBlock, dayId, blockId, close, t],
   );
 
   return (
@@ -96,19 +103,21 @@ export function SwapDialog({
           <GlassPanel tone="strong" radius="xl" className="max-h-[80svh] overflow-y-auto p-6">
             <header className="flex items-start justify-between gap-6">
               <div>
-                <p className="eyebrow">Alternatives</p>
+                <p className="eyebrow">{t('itinerary.alternatives')}</p>
                 <h2 className="mt-1.5 text-h2 text-primary">
-                  Something else, {KIND_META[kind].label.toLowerCase()}-ish
+                  {t('itinerary.alternativesHeading', {
+                    kind: t(KIND_META[kind].labelKey).toLowerCase(),
+                  })}
                 </h2>
                 <p className="mt-2 max-w-prose text-sm text-secondary">
-                  Picking one re-times the rest of the day around its duration and location.
+                  {t('itinerary.alternativesBody')}
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={close}
-                aria-label="Close alternatives"
+                aria-label={t('itinerary.closeAlternatives')}
                 className="-m-1 rounded-xs p-1 text-tertiary transition-colors hover:text-primary"
               >
                 <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor">
@@ -122,7 +131,7 @@ export function SwapDialog({
                 <div className="rounded-lg border border-subtle bg-surface-sunken p-6 text-center">
                   <p className="text-body text-secondary">{failed}</p>
                   <Button variant="secondary" size="sm" className="mt-4" onClick={load}>
-                    Try again
+                    {t('common.tryAgain')}
                   </Button>
                 </div>
               ) : alternatives === null ? (
@@ -133,7 +142,7 @@ export function SwapDialog({
                 </>
               ) : alternatives.length === 0 ? (
                 <p className="rounded-lg border border-subtle bg-surface-sunken p-6 text-center text-body text-secondary">
-                  No alternatives left in this city that fit your budget. Try raising it.
+                  {t('itinerary.alternativesEmpty')}
                 </p>
               ) : (
                 alternatives.map((alternative) => (
@@ -158,17 +167,17 @@ export function SwapDialog({
                     />
                     <div className="min-w-0">
                       <p className={`eyebrow ${KIND_META[alternative.kind].textClass}`}>
-                        {KIND_META[alternative.kind].label}
+                        {t(KIND_META[alternative.kind].labelKey)}
                       </p>
                       <p className="mt-1 font-semibold text-primary">{alternative.title}</p>
                       <p className="mt-1 line-clamp-2 text-sm text-secondary">
                         {alternative.summary}
                       </p>
                       <p className="tabular mt-2 text-xs text-tertiary">
-                        {formatDuration(alternative.durationMinutes)} ·{' '}
+                        {formatDuration(alternative.durationMinutes, locale)} ·{' '}
                         {alternative.price === 0
-                          ? 'Free'
-                          : formatPrice(alternative.price, currency)}
+                          ? t('common.free')
+                          : formatPrice(alternative.price, currency, locale)}
                       </p>
                     </div>
                   </motion.button>

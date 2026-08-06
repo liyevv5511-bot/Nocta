@@ -137,9 +137,10 @@ These are deliberate, and each one is a trade I would defend in review:
 
 Stated plainly rather than left for you to discover:
 
-- **i18n via react-i18next.** `lib/format.ts` is locale-parameterised throughout (`en`/`az`/`ru`)
-  and every figure goes through `Intl`, but strings are not extracted and there is no language
-  switcher.
+- **Localised URLs.** The interface is fully translated, but every language is served from the
+  same paths, so only the English pages are indexable. Prefixed routes (`/az/plan`, `/ru/plan`)
+  with `hreflang` alternates are what indexing the other two would take, and prerendering already
+  handles the ×3 output — it is the routing that is not built.
 - **PDF export via jsPDF/html2canvas.** `/trip/:id` offers print-to-PDF through the browser, which
   produces better output than a canvas rasterisation, but it is not the library asked for.
 - **Hotel/restaurant ratings.** The venue catalogue has no rating field — inventing star ratings for
@@ -149,6 +150,36 @@ Stated plainly rather than left for you to discover:
   deployment, because an unverified link is worse than none.
 
 ---
+
+## Localisation
+
+English, Azerbaijani and Russian, across the whole interface.
+
+**The dictionary is the type.** `src/i18n/en.ts` is the source, and `az.ts` and `ru.ts` are
+declared as `Dictionary` — a key English has and a translation does not is a compile error, not a
+raw `plan.heading` rendered to somebody. `t()` is typed against it too, so `t('plan.headnig')` does
+not build. That is what "keys extracted from day one" has to mean to be worth anything.
+
+**English is bundled; the others are fetched.** Three dictionaries in the entry chunk would be most
+of the first-load budget spent on text nobody has asked for. `az` (7.8kB gz) and `ru` (9.4kB gz)
+are dynamic imports, and there is an E2E test asserting neither is requested before it is chosen.
+
+**The figures are localised, not just the words.** `lib/format.ts` has taken a locale since the day
+it was written; `useLocale()` is the wire that finally supplies a real one. The same price renders
+`€120`, `€ 120` and `120 €` in the three languages, and dates and relative times follow. A project
+that translates strings and leaves `Intl` on a hardcoded locale has done the visible half.
+
+Russian is the reason the plural handling is real rather than an `s` suffix: `1 ночь`, `2 ночи`,
+`5 ночей` are three different words. English supplies two forms, Russian three, Azerbaijani one —
+each supplies what its own grammar needs rather than being forced into English's shape.
+
+**What is not translated: the venue catalogue.** City blurbs and venue descriptions stay in
+English. They are editorial writing about specific places, and running a hundred hand-written
+descriptions through machine translation would produce exactly the filler this project is otherwise
+free of. The FAQ says so in all three languages rather than leaving you to notice.
+
+A dictionary test covers what the type system cannot: dropped `{{placeholders}}`, strings left in
+English, empty values, and the plural forms each language actually needs.
 
 ## The route builder
 
@@ -230,8 +261,8 @@ Measured, not asserted. `npm run budget` fails the build if the initial payload 
 
 ```
 react       89.2 kB   motion  44.4 kB
-index       27.2 kB   Landing  9.6 kB
-TOTAL      170.3 kB  /  200 kB budget      CSS 10.9 kB / 25 kB
+index       47.9 kB   Landing  9.6 kB
+TOTAL      191.1 kB  /  200 kB budget      CSS 11.1 kB / 25 kB
 ```
 
 How it stays there: heavy dependencies are deferred with a dynamic `import()` inside an effect —
@@ -279,7 +310,8 @@ than moving thresholds:
 ```
 
 The unit suite covers the itinerary reducer (re-timing, reordering, cross-day moves, totals), the
-route model (URL parsing, legs, totals), the distance maths, the Zod contract, the storage
+route model (URL parsing, legs, totals), the dictionaries, the distance maths, the Zod contract,
+the storage
 migration chain, the planner engine, and the UI primitives' keyboard and ARIA behaviour.
 
 Bugs found by writing these rather than by clicking around:

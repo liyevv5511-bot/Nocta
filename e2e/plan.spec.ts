@@ -9,10 +9,21 @@ import { expect, test, type Page } from '@playwright/test';
  * changes. This one fails if the accessibility tree regresses.
  */
 
+/**
+ * The destination field, named rather than found by role alone.
+ *
+ * The language picker is a `<select>`, which is also a combobox — an
+ * unqualified `getByRole('combobox')` matches both. Naming it is the fix and
+ * is the better assertion anyway: it checks the field has an accessible name.
+ */
+function destinationField(page: Page) {
+  return page.getByRole('combobox', { name: 'Where are you going?' });
+}
+
 async function generate(page: Page, destination: string, days: number): Promise<void> {
   await page.goto(`/plan?destination=${encodeURIComponent(destination)}`);
 
-  await expect(page.getByRole('combobox')).toHaveValue(destination);
+  await expect(destinationField(page)).toHaveValue(destination);
 
   await page.getByRole('button', { name: String(days), exact: true }).click();
   await page.getByRole('button', { name: new RegExp(`Build ${String(days)} days`) }).click();
@@ -107,7 +118,7 @@ test.describe('planner', () => {
   test('refuses a destination with no catalogue rather than inventing one', async ({ page }) => {
     await page.goto('/plan');
 
-    await page.getByRole('combobox').fill('Atlantis');
+    await destinationField(page).fill('Atlantis');
     await page.getByRole('heading', { name: 'Build the trip.' }).click();
 
     await expect(page.getByText(/No venue catalogue for/)).toBeVisible();

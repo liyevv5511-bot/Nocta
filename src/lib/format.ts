@@ -145,3 +145,8 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 64);
 }
+
+/** `8,689` — grouped by the locale's own convention, not a hardcoded comma. */
+export function formatNumber(value: number, locale: SupportedLocale = 'en'): string {
+  return new Intl.NumberFormat(resolve(locale), { maximumFractionDigits: 0 }).format(value);
+}

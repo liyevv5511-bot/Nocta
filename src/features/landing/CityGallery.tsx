@@ -1,8 +1,10 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { CITIES } from '@/data/cities';
 import { Photo } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { formatCurrency } from '@/lib/format';
 import { useGsapContext } from '@/lib/useGsapScroll';
 
@@ -22,6 +24,8 @@ import { useGsapContext } from '@/lib/useGsapScroll';
  * by the user instead of by the page.
  */
 export function CityGallery(): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const root = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
 
@@ -50,15 +54,11 @@ export function CityGallery(): React.ReactElement {
   return (
     <section ref={root} aria-labelledby="gallery-heading" className="overflow-hidden py-24">
       <div className="container-content">
-        <p className="eyebrow">The catalogue</p>
+        <p className="eyebrow">{t('gallery.eyebrow')}</p>
         <h2 id="gallery-heading" className="mt-4 max-w-2xl text-display-2 text-primary">
-          Eight cities, researched properly.
+          {t('gallery.heading')}
         </h2>
-        <p className="mt-5 max-w-prose text-body-lg text-secondary">
-          Not eight thousand scraped listings. Every venue in here has a real address, real
-          coordinates and a reason to be on the list — which is why the planner can promise you a
-          walking time and mean it.
-        </p>
+        <p className="mt-5 max-w-prose text-body-lg text-secondary">{t('gallery.body')}</p>
       </div>
 
       <ul
@@ -85,7 +85,9 @@ export function CityGallery(): React.ReactElement {
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="text-h3 text-primary">{city.name}</h3>
                   <p className="tabular shrink-0 text-sm text-tertiary">
-                    {formatCurrency(city.avgDailyCost, city.currency)}/day
+                    {t('common.perDay', {
+                      amount: formatCurrency(city.avgDailyCost, city.currency, locale),
+                    })}
                   </p>
                 </div>
                 <p className="mt-2 line-clamp-2 text-sm text-secondary">{city.tagline}</p>

@@ -1,4 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { CITIES } from '@/data/cities';
@@ -51,6 +53,7 @@ export function WorldMap({
   showDestinationList = true,
   className,
 }: WorldMapProps): React.ReactElement {
+  const { t } = useTranslation();
   const [containerRef, size] = useElementSize();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paletteRef = useRef<MapPalette | null>(null);
@@ -183,7 +186,7 @@ export function WorldMap({
         </AnimatePresence>
 
         <p className="pointer-events-none absolute top-4 right-4 rounded-pill border border-subtle bg-canvas/70 px-3 py-1 text-mono-xs tracking-[0.09em] text-tertiary uppercase">
-          {routeLabel(route, selected)}
+          {routeLabel(route, selected, t)}
         </p>
       </div>
 
@@ -205,9 +208,7 @@ export function WorldMap({
 }
 
 /** What the overlay chip says: the route if there is one, else the catalogue. */
-function routeLabel(route: readonly City[], selected: City | null): string {
-  if (route.length > 0) {
-    return `${String(route.length)} ${route.length === 1 ? 'stop' : 'stops'}`;
-  }
-  return selected === null ? `${String(CITIES.length)} destinations` : selected.country;
+function routeLabel(route: readonly City[], selected: City | null, t: TFunction): string {
+  if (route.length > 0) return t('common.stops', { count: route.length });
+  return selected === null ? t('map.destinationCount', { count: CITIES.length }) : selected.country;
 }

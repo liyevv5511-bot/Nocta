@@ -1,3 +1,5 @@
+import { i18next } from '@/i18n';
+
 /**
  * Transport-level types shared by every async surface in the app.
  *
@@ -43,26 +45,29 @@ export class ApiError extends Error {
     this.retryable = kind !== 'validation' && kind !== 'not_found' && kind !== 'aborted';
   }
 
-  /** Copy suitable for showing to a traveller, not to an engineer. */
+  /**
+   * Copy suitable for showing to a traveller, not to an engineer.
+   *
+   * Translated through the i18next instance rather than a hook: errors are
+   * constructed in the transport layer, far from any component, and the
+   * message has to be right whichever language is active when it surfaces.
+   */
   get userMessage(): string {
-    switch (this.kind) {
-      case 'offline':
-        return 'You appear to be offline. Your saved trips are still available.';
-      case 'network':
-        return 'We could not reach the planner. Check your connection and try again.';
-      case 'timeout':
-        return 'The planner took too long to respond. Try again in a moment.';
-      case 'aborted':
-        return 'Generation cancelled.';
-      case 'validation':
-        return 'The planner returned something we could not read. This one is on us.';
-      case 'not_found':
-        return 'We could not find that trip. It may have been deleted.';
-      case 'rate_limited':
-        return 'Too many plans at once. Give it a minute and try again.';
-      case 'server':
-        return 'The planner hit an error. We have logged it — please try again.';
-    }
+    // `as const satisfies` rather than a `Record<…, string>` annotation: the
+    // typed `t()` demands a known key, and a widened `string` is exactly what
+    // it is designed to reject.
+    const KEYS = {
+      offline: 'errors.offline',
+      network: 'errors.network',
+      timeout: 'errors.timeout',
+      aborted: 'errors.aborted',
+      validation: 'errors.validation',
+      not_found: 'errors.notFound',
+      rate_limited: 'errors.rateLimited',
+      server: 'errors.server',
+    } as const satisfies Record<ApiErrorKind, string>;
+
+    return i18next.t(KEYS[this.kind]);
   }
 }
 

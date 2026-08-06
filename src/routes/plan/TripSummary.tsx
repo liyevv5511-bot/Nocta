@@ -1,5 +1,8 @@
+import { useTranslation } from 'react-i18next';
+
 import { tripTotals } from '@/features/itinerary/itinerary.reducer';
 import { Button, GlassPanel } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { formatCurrency, formatDuration } from '@/lib/format';
 import type { Itinerary } from '@/types/itinerary';
 
@@ -23,6 +26,8 @@ export function TripSummary({
   storageAvailable,
   onSave,
 }: TripSummaryProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const totals = tripTotals(itinerary);
   const { currency } = itinerary.meta;
   const dayCount = itinerary.days.length;
@@ -33,21 +38,31 @@ export function TripSummary({
         <div className="min-w-0 flex-1">
           <p className="eyebrow">{itinerary.meta.destination}</p>
           <h2 className="mt-2 text-h1 text-primary">
-            {dayCount} {dayCount === 1 ? 'day' : 'days'} in {itinerary.meta.destination}
+            {t('saved.defaultName', { count: dayCount, city: itinerary.meta.destination })}
           </h2>
           <p className="mt-3 max-w-prose text-body text-secondary">{itinerary.summary}</p>
         </div>
 
         <Button onClick={onSave} disabled={saved || !storageAvailable} variant="secondary">
-          {saved ? 'Saved' : storageAvailable ? 'Save trip' : 'Storage unavailable'}
+          {saved
+            ? t('plan.saved')
+            : storageAvailable
+              ? t('plan.save')
+              : t('plan.storageUnavailable')}
         </Button>
       </div>
 
       <dl className="mt-7 grid grid-cols-2 gap-5 border-t border-subtle pt-6 sm:grid-cols-4">
-        <Figure label="Activities" value={String(totals.blocks)} />
-        <Figure label="Free of charge" value={String(totals.freeBlocks)} />
-        <Figure label="Total cost" value={formatCurrency(totals.cost, currency)} />
-        <Figure label="On foot" value={formatDuration(totals.walkMinutes)} />
+        <Figure label={t('plan.totals.activities')} value={String(totals.blocks)} />
+        <Figure label={t('plan.totals.free')} value={String(totals.freeBlocks)} />
+        <Figure
+          label={t('plan.totals.cost')}
+          value={formatCurrency(totals.cost, currency, locale)}
+        />
+        <Figure
+          label={t('plan.totals.onFoot')}
+          value={formatDuration(totals.walkMinutes, locale)}
+        />
       </dl>
 
       {itinerary.highlights.length === 0 ? null : (

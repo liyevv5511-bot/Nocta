@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { Skeleton } from '@/features/ui';
 
 /**
@@ -9,8 +11,14 @@ import { Skeleton } from '@/features/ui';
  * — the collapse is a layout shift the Core Web Vitals budget cannot afford.
  */
 export function RouteFallback(): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
-    <div className="container-content min-h-[70svh] py-24" role="status" aria-label="Loading page">
+    <div
+      className="container-content min-h-[70svh] py-24"
+      role="status"
+      aria-label={t('loading.page')}
+    >
       <div className="max-w-2xl space-y-4">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-12 w-full" />
@@ -21,7 +29,7 @@ export function RouteFallback(): React.ReactElement {
           <Skeleton className="h-4 w-2/3" />
         </div>
       </div>
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">{t('loading.ellipsis')}</span>
     </div>
   );
 }

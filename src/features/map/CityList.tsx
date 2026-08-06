@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+
+import { useLocale } from '@/i18n/useLocale';
 import { cn } from '@/lib/cn';
 import { formatCurrency } from '@/lib/format';
 import type { City } from '@/types/city';
@@ -26,9 +29,12 @@ export function CityList({
   onSelect,
   onHover,
 }: CityListProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
+
   return (
     <div className="flex flex-col">
-      <h3 className="eyebrow">Destinations</h3>
+      <h3 className="eyebrow">{t('map.destinations')}</h3>
 
       {/*
        * A div, not a <ul>. `role="listbox"` overrides the list semantics, which
@@ -38,7 +44,7 @@ export function CityList({
        */}
       <div
         role="listbox"
-        aria-label="Destinations"
+        aria-label={t('map.destinations')}
         className="no-scrollbar mt-3 flex-1 space-y-1 overflow-y-auto lg:max-h-[30rem]"
       >
         {cities.map((city) => {
@@ -76,7 +82,7 @@ export function CityList({
               <div className="flex items-baseline justify-between gap-3">
                 <span className="font-medium text-primary">{city.name}</span>
                 <span className="tabular shrink-0 text-xs text-tertiary">
-                  {formatCurrency(city.avgDailyCost, city.currency)}
+                  {formatCurrency(city.avgDailyCost, city.currency, locale)}
                 </span>
               </div>
               <p className="mt-0.5 line-clamp-1 text-sm text-tertiary">{city.tagline}</p>

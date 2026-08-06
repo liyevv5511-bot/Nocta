@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { z } from 'zod';
 
 import { toast } from '@/features/ui';
+import { i18next } from '@/i18n';
 import { createStore } from '@/lib/storage';
 import { ItinerarySchema, type Itinerary } from '@/types/itinerary';
 
@@ -53,8 +54,10 @@ const store = createStore<SavedTrip[]>({
 });
 
 export function defaultName(itinerary: Itinerary): string {
-  const days = itinerary.days.length;
-  return `${String(days)} ${days === 1 ? 'day' : 'days'} in ${itinerary.meta.destination}`;
+  return i18next.t('saved.defaultName', {
+    count: itinerary.days.length,
+    city: itinerary.meta.destination,
+  });
 }
 
 export interface TripStorage {
@@ -83,10 +86,7 @@ export function useTripStorage(): TripStorage {
       setAvailable(false);
     }
     if (!result.ok && result.reason === 'corrupt') {
-      toast.warning(
-        'Saved trips could not be read',
-        'The stored data was in an unexpected format. It has been set aside rather than deleted.',
-      );
+      toast.warning(i18next.t('saved.couldNotRead'), i18next.t('saved.couldNotReadBody'));
     }
     if (result.ok && result.migrated) {
       // Persist the migrated shape immediately, so the migration runs once
@@ -99,10 +99,7 @@ export function useTripStorage(): TripStorage {
     setTrips(next);
     const written = store.write(next);
     if (!written) {
-      toast.error(
-        'Could not save',
-        'Your browser refused to write to local storage — it may be full or in private mode.',
-      );
+      toast.error(i18next.t('saved.couldNotSave'), i18next.t('saved.couldNotSaveBody'));
     }
     return written;
   }, []);

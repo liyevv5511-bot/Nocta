@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { Seo } from '@/app/Seo';
 import { ogImageUrl } from '@/config/site';
 import { CITIES } from '@/data/cities';
@@ -15,6 +17,7 @@ import { formatList } from '@/lib/format';
  * whoever you are travelling with.
  */
 export function Route(): React.ReactElement {
+  const { t } = useTranslation();
   const { cities, summary } = useRoute();
   const names = cities.map((city) => city.name);
 
@@ -51,13 +54,9 @@ export function Route(): React.ReactElement {
 
       <div className="container-content py-14 lg:py-20">
         <header className="max-w-2xl">
-          <p className="eyebrow">Route builder</p>
-          <h1 className="mt-4 text-display-2 text-primary">One trip, several cities.</h1>
-          <p className="mt-4 text-body-lg text-secondary">
-            Chain up to six of them. Nocta measures every hop along the great circle, works out how
-            long each city is actually worth, and totals the whole thing — then hands each stop to
-            the planner.
-          </p>
+          <p className="eyebrow">{t('route.eyebrow')}</p>
+          <h1 className="mt-4 text-display-2 text-primary">{t('route.heading')}</h1>
+          <p className="mt-4 text-body-lg text-secondary">{t('route.body')}</p>
         </header>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_26rem] lg:items-start">

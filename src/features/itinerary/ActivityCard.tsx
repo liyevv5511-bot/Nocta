@@ -1,7 +1,9 @@
 import { useSortable } from '@dnd-kit/sortable';
+import { useTranslation } from 'react-i18next';
 import { CSS } from '@dnd-kit/utilities';
 import { Chip, Photo } from '@/features/ui';
 import { IconGrip, IconWalk } from '@/features/ui/icons';
+import { useLocale } from '@/i18n/useLocale';
 import { cn } from '@/lib/cn';
 import { formatDuration, formatPrice, formatTime } from '@/lib/format';
 import type { ActivityBlock, ActivityKind } from '@/types/itinerary';
@@ -35,6 +37,8 @@ export function ActivityCard({
   onRemove,
   sortable,
 }: ActivityCardProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const kind = KIND_META[block.kind];
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -58,14 +62,14 @@ export function ActivityCard({
       {block.place.walkFromPrevious === null ? null : (
         <p className="absolute -top-3 left-6 flex items-center gap-1.5 rounded-pill border border-subtle bg-canvas px-2 py-0.5 text-mono-xs tracking-[0.09em] text-tertiary uppercase">
           <IconWalk />
-          {formatDuration(block.place.walkFromPrevious)}
+          {formatDuration(block.place.walkFromPrevious, locale)}
         </p>
       )}
 
       <div className="flex gap-4 p-4">
         <div className="flex shrink-0 flex-col items-center gap-2">
           <time className="tabular text-sm font-semibold text-primary" dateTime={block.startTime}>
-            {formatTime(block.startTime)}
+            {formatTime(block.startTime, locale)}
           </time>
           {sortable ? (
             <button
@@ -93,7 +97,7 @@ export function ActivityCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className={cn('eyebrow', kind.textClass)}>{kind.label}</p>
+              <p className={cn('eyebrow', kind.textClass)}>{t(kind.labelKey)}</p>
               <h4 className="mt-1 text-h3 leading-snug text-primary">{block.title}</h4>
             </div>
 
@@ -117,9 +121,9 @@ export function ActivityCard({
           )}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-tertiary">
-            <span className="tabular">{formatDuration(block.durationMinutes)}</span>
+            <span className="tabular">{formatDuration(block.durationMinutes, locale)}</span>
             <span className="tabular font-medium text-primary">
-              {block.price === 0 ? 'Free' : formatPrice(block.price, currency)}
+              {block.price === 0 ? t('common.free') : formatPrice(block.price, currency, locale)}
             </span>
             <a
               href={mapLink(block)}

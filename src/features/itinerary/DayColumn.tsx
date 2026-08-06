@@ -1,6 +1,8 @@
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
+import { useLocale } from '@/i18n/useLocale';
 import { cn } from '@/lib/cn';
 import { formatCurrency, formatDuration } from '@/lib/format';
 import { fadeUp, inViewport, stagger } from '@/lib/motion';
@@ -32,6 +34,8 @@ export function DayColumn({
   onSwap,
   onRemove,
 }: DayColumnProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const totals = dayTotals(day);
   const blockIds = day.blocks.map((block) => block.id);
 
@@ -48,16 +52,22 @@ export function DayColumn({
       <motion.header variants={fadeUp} className="mb-5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <div>
-            <p className="eyebrow">Day {day.dayNumber}</p>
+            <p className="eyebrow">{t('itinerary.day', { count: day.dayNumber })}</p>
             <h3 id={`${day.id}-heading`} className="mt-1.5 text-h2 text-primary">
               {day.title}
             </h3>
           </div>
 
           <dl className="flex items-center gap-5 text-sm">
-            <Stat label="Cost" value={formatCurrency(totals.cost, currency)} />
-            <Stat label="On foot" value={formatDuration(totals.walkMinutes)} />
-            <Stat label="Ends" value={totals.endTime} />
+            <Stat
+              label={t('itinerary.cost')}
+              value={formatCurrency(totals.cost, currency, locale)}
+            />
+            <Stat
+              label={t('itinerary.onFoot')}
+              value={formatDuration(totals.walkMinutes, locale)}
+            />
+            <Stat label={t('itinerary.ends')} value={totals.endTime} />
           </dl>
         </div>
 

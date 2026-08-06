@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+
+import { CITIES } from '@/data/cities';
 import { GlassPanel } from '@/features/ui';
 
 /**
@@ -8,16 +11,13 @@ import { GlassPanel } from '@/features/ui';
  * apologising for the absence of one.
  */
 export function EmptyState(): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <GlassPanel radius="xl" className="p-10 text-center">
-      <p className="text-h2 text-primary">Nothing planned yet</p>
-      <p className="mx-auto mt-4 max-w-prose text-body-lg text-secondary">
-        Choose a destination on the left and the planner will build a schedule — hour by hour, with
-        the walking time between every stop worked out.
-      </p>
-      <p className="mt-6 text-sm text-tertiary">
-        Eight cities available. Nothing is charged, ever.
-      </p>
+      <p className="text-h2 text-primary">{t('plan.emptyHeading')}</p>
+      <p className="mx-auto mt-4 max-w-prose text-body-lg text-secondary">{t('plan.emptyBody')}</p>
+      <p className="mt-6 text-sm text-tertiary">{t('plan.emptyNote', { count: CITIES.length })}</p>
     </GlassPanel>
   );
 }

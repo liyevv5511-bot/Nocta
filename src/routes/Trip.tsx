@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
 import { Seo } from '@/app/Seo';
@@ -9,6 +10,7 @@ import { usePlanStore } from '@/features/itinerary/plan.store';
 import { useTripStorage } from '@/features/trips/useTripStorage';
 import { WorldMap } from '@/features/map';
 import { Button, GlassPanel } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { formatCurrency, formatDate, formatDuration } from '@/lib/format';
 
 /**
@@ -21,6 +23,8 @@ import { formatCurrency, formatDate, formatDuration } from '@/lib/format';
  * server outage.
  */
 export function Trip(): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const { tripId } = useParams<{ tripId: string }>();
   const { trips, find } = useTripStorage();
   const loadItinerary = usePlanStore((state) => state.loadItinerary);
@@ -85,14 +89,16 @@ export function Trip(): React.ReactElement {
       <div className="container-content py-14 lg:py-20">
         <nav aria-label="Breadcrumb" className="mb-8">
           <Link to="/saved" className="text-sm text-tertiary hover:text-primary">
-            ← All saved trips
+            {t('trip.allSaved')}
           </Link>
         </nav>
 
         <header className="max-w-3xl">
           <p className="eyebrow">
             {active.meta.destination}
-            {saved === undefined ? '' : ` · saved ${formatDate(saved.savedAt)}`}
+            {saved === undefined
+              ? ''
+              : ` · ${t('trip.savedOn', { date: formatDate(saved.savedAt, locale) })}`}
           </p>
           <h1 className="mt-4 text-display-2 text-primary">{saved?.name ?? active.summary}</h1>
           <p className="mt-4 text-body-lg text-secondary">{active.summary}</p>
@@ -100,10 +106,10 @@ export function Trip(): React.ReactElement {
 
         <GlassPanel radius="xl" className="mt-10 p-6">
           <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-            <Figure label="Days" value={String(active.days.length)} />
-            <Figure label="Activities" value={String(totals.blocks)} />
+            <Figure label={t('trip.days')} value={String(active.days.length)} />
+            <Figure label={t('trip.activities')} value={String(totals.blocks)} />
             <Figure label="Total cost" value={formatCurrency(totals.cost, active.meta.currency)} />
-            <Figure label="On foot" value={formatDuration(totals.walkMinutes)} />
+            <Figure label={t('trip.onFoot')} value={formatDuration(totals.walkMinutes, locale)} />
           </dl>
 
           <div className="mt-6 flex flex-wrap gap-3 border-t border-subtle pt-5">
@@ -114,7 +120,7 @@ export function Trip(): React.ReactElement {
                 window.print();
               }}
             >
-              Print or save as PDF
+              {t('trip.print')}
             </Button>
             <Button
               variant="ghost"
@@ -123,7 +129,7 @@ export function Trip(): React.ReactElement {
                 void navigator.clipboard.writeText(window.location.href);
               }}
             >
-              Copy link
+              {t('trip.copyLink')}
             </Button>
           </div>
         </GlassPanel>
@@ -147,6 +153,8 @@ export function Trip(): React.ReactElement {
 }
 
 function TripNotFound(): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <>
       <Seo
@@ -157,18 +165,14 @@ function TripNotFound(): React.ReactElement {
       />
       <div className="container-content grid min-h-[60svh] place-items-center py-20 text-center">
         <div className="max-w-lg">
-          <p className="eyebrow">Not found</p>
-          <h1 className="mt-3 text-h1 text-primary">That trip is not in this browser</h1>
-          <p className="mt-4 text-body text-secondary">
-            Trips are stored locally and never uploaded, so a link only opens on the device that
-            created it. Build it again — the planner is deterministic, so the same inputs produce
-            the same plan.
-          </p>
+          <p className="eyebrow">{t('trip.notFoundEyebrow')}</p>
+          <h1 className="mt-3 text-h1 text-primary">{t('trip.notFoundHeading')}</h1>
+          <p className="mt-4 text-body text-secondary">{t('trip.notFoundBody')}</p>
           <Link
             to="/plan"
             className="mt-8 inline-flex h-12 items-center rounded-md bg-accent px-6 font-medium text-accent-contrast"
           >
-            Open the planner
+            {t('trip.openPlanner')}
           </Link>
         </div>
       </div>

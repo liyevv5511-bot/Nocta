@@ -1,71 +1,34 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { GlassPanel, Toggle } from '@/features/ui';
 import { cn } from '@/lib/cn';
+import { CITIES } from '@/data/cities';
+import { useLocale } from '@/i18n/useLocale';
 import { formatCurrency } from '@/lib/format';
 import { fadeUp, inViewport, stagger } from '@/lib/motion';
 
+/** Which tier is highlighted, and what each costs. Copy lives in the dictionary. */
 interface Tier {
-  id: string;
-  name: string;
+  id: 'free' | 'pro' | 'team';
   monthly: number;
-  blurb: string;
-  features: readonly string[];
-  cta: string;
-  featured?: boolean;
+  featured: boolean;
 }
 
 const TIERS: readonly Tier[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    monthly: 0,
-    blurb: 'Everything in this demo, permanently.',
-    features: [
-      'Unlimited plans across all 8 cities',
-      'Streamed generation with live reasoning',
-      'Drag-to-reorder with automatic re-timing',
-      'Up to 30 trips saved in your browser',
-    ],
-    cta: 'Start planning',
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    monthly: 8,
-    blurb: 'For people who take four trips a year, not one.',
-    features: [
-      'Everything in Free',
-      'Multi-city routes with transfer planning',
-      'Offline export to PDF and calendar',
-      'Live opening hours and closure warnings',
-      'Plans synced across your devices',
-    ],
-    cta: 'Choose Pro',
-    featured: true,
-  },
-  {
-    id: 'team',
-    name: 'Team',
-    monthly: 24,
-    blurb: 'Shared planning for groups that argue over dinner.',
-    features: [
-      'Everything in Pro',
-      'Shared trips with per-person voting',
-      'Comment threads on any activity',
-      'Split-cost view across the group',
-      'Priority generation queue',
-    ],
-    cta: 'Choose Team',
-  },
+  { id: 'free', monthly: 0, featured: false },
+  { id: 'pro', monthly: 8, featured: true },
+  { id: 'team', monthly: 24, featured: false },
 ];
 
 /** Two months free — stated as a number rather than implied by a badge. */
 const ANNUAL_MULTIPLIER = 10;
 
 export function Pricing(): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const [annual, setAnnual] = useState(true);
 
   return (
@@ -73,21 +36,18 @@ export function Pricing(): React.ReactElement {
       <div className="container-content">
         <div className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
           <div>
-            <p className="eyebrow">Pricing</p>
+            <p className="eyebrow">{t('pricing.eyebrow')}</p>
             <h2 id="pricing-heading" className="mt-4 max-w-xl text-display-2 text-primary">
-              Free does the whole job.
+              {t('pricing.heading')}
             </h2>
-            <p className="mt-5 max-w-prose text-body-lg text-secondary">
-              This is a portfolio project, so nothing here charges anyone anything. The tiers show
-              what a real plan structure would look like — and Free is not a crippled trial.
-            </p>
+            <p className="mt-5 max-w-prose text-body-lg text-secondary">{t('pricing.body')}</p>
           </div>
 
           <Toggle
             checked={annual}
             onChange={setAnnual}
-            label="Annual billing"
-            description="Two months free"
+            label={t('pricing.annual')}
+            description={t('pricing.annualNote')}
           />
         </div>
 
@@ -105,34 +65,38 @@ export function Pricing(): React.ReactElement {
               <motion.div key={tier.id} variants={fadeUp}>
                 <GlassPanel
                   radius="xl"
-                  tone={tier.featured === true ? 'strong' : 'default'}
-                  className={cn(
-                    'flex h-full flex-col p-7',
-                    tier.featured === true && 'shadow-glow',
-                  )}
+                  tone={tier.featured ? 'strong' : 'default'}
+                  className={cn('flex h-full flex-col p-7', tier.featured && 'shadow-glow')}
                 >
                   <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="text-h3 text-primary">{tier.name}</h3>
-                    {tier.featured === true ? (
+                    <h3 className="text-h3 text-primary">{t(`pricing.tiers.${tier.id}.name`)}</h3>
+                    {tier.featured ? (
                       <span className="rounded-pill bg-accent-muted px-2.5 py-1 text-mono-xs tracking-[0.09em] text-accent uppercase">
-                        Most useful
+                        {t('pricing.mostUseful')}
                       </span>
                     ) : null}
                   </div>
 
-                  <p className="mt-2 text-sm text-secondary">{tier.blurb}</p>
+                  <p className="mt-2 text-sm text-secondary">
+                    {t(`pricing.tiers.${tier.id}.blurb`)}
+                  </p>
 
                   <p className="mt-6 flex items-baseline gap-1.5">
                     <span className="tabular text-display-2 text-primary">
-                      {tier.monthly === 0 ? 'Free' : formatCurrency(Math.round(price))}
+                      {tier.monthly === 0
+                        ? t('common.free')
+                        : formatCurrency(Math.round(price), 'EUR', locale)}
                     </span>
                     {tier.monthly === 0 ? null : (
-                      <span className="text-sm text-tertiary">/ month</span>
+                      <span className="text-sm text-tertiary">{t('pricing.perMonth')}</span>
                     )}
                   </p>
 
                   <ul className="mt-7 flex-1 space-y-3">
-                    {tier.features.map((feature) => (
+                    {t(`pricing.tiers.${tier.id}.features`, {
+                      returnObjects: true,
+                      cities: CITIES.length,
+                    }).map((feature) => (
                       <li key={feature} className="flex gap-3 text-sm text-secondary">
                         <svg
                           viewBox="0 0 24 24"
@@ -157,12 +121,12 @@ export function Pricing(): React.ReactElement {
                     to="/plan"
                     className={cn(
                       'mt-8 flex h-12 items-center justify-center rounded-md font-medium transition-colors',
-                      tier.featured === true
+                      tier.featured
                         ? 'bg-accent text-accent-contrast hover:bg-accent-hover'
                         : 'border border-default text-primary hover:bg-surface-hover',
                     )}
                   >
-                    {tier.cta}
+                    {t(`pricing.tiers.${tier.id}.cta`)}
                   </Link>
                 </GlassPanel>
               </motion.div>

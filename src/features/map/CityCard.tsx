@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Chip, GlassPanel, Photo } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { cn } from '@/lib/cn';
 import { formatCurrency, formatList } from '@/lib/format';
 import { SPRING_SOFT, transition } from '@/lib/motion';
@@ -22,6 +24,9 @@ export interface CityCardProps {
  * need to argue for itself.
  */
 export function CityCard({ city, onClose, className }: CityCardProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, scale: 0.96 }}
@@ -45,7 +50,7 @@ export function CityCard({ city, onClose, className }: CityCardProps): React.Rea
           <button
             type="button"
             onClick={onClose}
-            aria-label={`Close ${city.name}`}
+            aria-label={t('map.closeCity', { city: city.name })}
             className="absolute top-2 right-2 grid size-8 place-items-center rounded-pill bg-[oklch(0%_0_0/0.5)] text-[oklch(100%_0_0)] backdrop-blur-sm transition-opacity hover:opacity-80"
           >
             <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor">
@@ -63,9 +68,12 @@ export function CityCard({ city, onClose, className }: CityCardProps): React.Rea
           <p className="mt-2 text-sm leading-relaxed text-secondary">{city.tagline}</p>
 
           <dl className="mt-4 grid grid-cols-3 gap-3 border-y border-subtle py-3">
-            <Figure label="Per day" value={formatCurrency(city.avgDailyCost, city.currency)} />
-            <Figure label="Now" value={`${String(Math.round(city.temperatureC))}°C`} />
-            <Figure label="Best" value={capitalise(city.bestSeasons[0] ?? 'spring')} />
+            <Figure
+              label={t('map.perDayLabel')}
+              value={formatCurrency(city.avgDailyCost, city.currency, locale)}
+            />
+            <Figure label={t('map.now')} value={`${String(Math.round(city.temperatureC))}°C`} />
+            <Figure label={t('map.best')} value={t(`seasons.${city.bestSeasons[0] ?? 'spring'}`)} />
           </dl>
 
           <p className="mt-3 text-xs text-tertiary">{city.weatherSummary}</p>
@@ -93,13 +101,20 @@ export function CityCard({ city, onClose, className }: CityCardProps): React.Rea
             ))}
           </div>
 
-          <p className="sr-only">Best seasons: {formatList(city.bestSeasons)}.</p>
+          <p className="sr-only">
+            {t('map.bestSeasons', {
+              seasons: formatList(
+                city.bestSeasons.map((season) => t(`seasons.${season}`)),
+                locale,
+              ),
+            })}
+          </p>
 
           <Link
             to={`/destination/${city.id}`}
             className="mt-5 flex h-11 w-full items-center justify-center rounded-md bg-accent text-body font-medium text-accent-contrast transition-colors hover:bg-accent-hover"
           >
-            About {city.name}
+            {t('destination.aboutCity', { city: city.name })}
           </Link>
         </div>
       </GlassPanel>
@@ -114,8 +129,4 @@ function Figure({ label, value }: { label: string; value: string }): React.React
       <dd className="tabular mt-0.5 font-semibold text-primary">{value}</dd>
     </div>
   );
-}
-
-function capitalise(value: string): string {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }

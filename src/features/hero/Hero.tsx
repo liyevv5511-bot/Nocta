@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { CITIES } from '@/data/cities';
@@ -10,6 +11,7 @@ import { SplitHeadline } from './SplitHeadline';
 import { useHeroParallax } from './useHeroParallax';
 
 export function Hero(): React.ReactElement {
+  const { t } = useTranslation();
   const parallax = useHeroParallax();
 
   return (
@@ -48,12 +50,12 @@ export function Hero(): React.ReactElement {
           className="eyebrow inline-flex items-center gap-2 rounded-pill border border-subtle px-3 py-1.5"
         >
           <span className="size-1.5 rounded-pill bg-accent" aria-hidden="true" />
-          {CITIES.length} cities · 100+ venues · zero stock photos of a couple pointing
+          {t('hero.badge', { count: CITIES.length })}
         </motion.p>
 
         <SplitHeadline
-          text="Itineraries that read like a local wrote them."
-          emphasise={['local', 'wrote']}
+          text={t('hero.headline')}
+          emphasise={t('hero.emphasis', { returnObjects: true })}
           delay={0.15}
           className="mt-7 max-w-4xl text-display-1 text-primary"
         />
@@ -65,9 +67,7 @@ export function Hero(): React.ReactElement {
           className="mt-8 max-w-xl"
         >
           <motion.p variants={fadeUp} className="text-body-lg text-secondary">
-            Pick a city, a mood and a budget. Nocta streams back an hour-by-hour plan with real
-            venues, real opening quirks and real walking times between them — then lets you drag the
-            whole thing into a shape you actually like.
+            {t('hero.body')}
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-9 flex flex-wrap items-center gap-3">
@@ -76,7 +76,7 @@ export function Hero(): React.ReactElement {
               data-magnetic
               className="inline-flex h-14 items-center rounded-lg bg-accent px-7 text-body-lg font-medium text-accent-contrast shadow-glow transition-colors hover:bg-accent-hover"
             >
-              Plan a trip
+              {t('hero.planTrip')}
             </Link>
 
             <button
@@ -87,12 +87,12 @@ export function Hero(): React.ReactElement {
               }}
               className="inline-flex h-14 items-center rounded-lg border border-default px-7 text-body-lg font-medium text-primary transition-colors hover:bg-surface-hover"
             >
-              How it works
+              {t('hero.howItWorks')}
             </button>
           </motion.div>
 
           <motion.p variants={fadeUp} className="mt-6 text-sm text-tertiary">
-            No account. No booking funnel. Plans stay in your browser.
+            {t('hero.noAccount')}
           </motion.p>
         </motion.div>
       </motion.div>

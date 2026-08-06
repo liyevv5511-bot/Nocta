@@ -1,6 +1,9 @@
 import type { StateCreator } from 'zustand';
 
 import { toast } from '@/features/ui';
+// The store is not a component, so it reads the active language from the
+// instance rather than a hook.
+import { i18next } from '@/i18n';
 import { ApiError, isApiError } from '@/types/api';
 import type { Itinerary, ItineraryDay, PlanRequest } from '@/types/itinerary';
 
@@ -110,7 +113,7 @@ export const createGenerationSlice: StateCreator<PlanState, [], [], GenerationSl
                   error: new ApiError('server', event.message),
                   statusMessage: '',
                 });
-                toast.error('Generation failed', event.message);
+                toast.error(i18next.t('errors.generationFailed'), event.message);
                 break;
             }
           },
@@ -131,7 +134,7 @@ export const createGenerationSlice: StateCreator<PlanState, [], [], GenerationSl
       }
 
       set({ phase: 'error', error: apiError, statusMessage: '' });
-      toast.error('Could not build your plan', apiError.userMessage);
+      toast.error(i18next.t('errors.couldNotBuild'), apiError.userMessage);
     } finally {
       if (activeController === controller) activeController = null;
     }

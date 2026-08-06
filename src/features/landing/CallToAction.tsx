@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { GlassPanel } from '@/features/ui';
 import { fadeUp, inViewport } from '@/lib/motion';
 
 export function CallToAction(): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <section aria-labelledby="cta-heading" className="section-y">
       <div className="container-content">
@@ -17,12 +20,9 @@ export function CallToAction(): React.ReactElement {
 
             <div className="max-w-2xl">
               <h2 id="cta-heading" className="text-display-2 text-primary">
-                Pick a city. It takes about eight seconds.
+                {t('cta.heading')}
               </h2>
-              <p className="mt-5 text-body-lg text-secondary">
-                No account, no email, no funnel. The plan appears, and then you argue with it until
-                it is yours.
-              </p>
+              <p className="mt-5 text-body-lg text-secondary">{t('cta.body')}</p>
 
               <div className="mt-9 flex flex-wrap gap-3">
                 <Link
@@ -30,14 +30,14 @@ export function CallToAction(): React.ReactElement {
                   data-magnetic
                   className="inline-flex h-14 items-center rounded-lg bg-accent px-8 text-body-lg font-medium text-accent-contrast transition-colors hover:bg-accent-hover"
                 >
-                  Plan a trip
+                  {t('cta.plan')}
                 </Link>
                 <Link
                   to="/styleguide"
                   data-magnetic
                   className="inline-flex h-14 items-center rounded-lg border border-default px-8 text-body-lg font-medium text-primary transition-colors hover:bg-surface-hover"
                 >
-                  See the design system
+                  {t('cta.styleguide')}
                 </Link>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom';
 
 import { Button } from '@/features/ui';
@@ -18,20 +19,18 @@ import { IS_DEV } from '@/lib/env';
  */
 
 export function RouteErrorBoundary(): React.ReactElement {
+  const { t } = useTranslation();
   const error = useRouteError();
 
   const { title, detail } = isRouteErrorResponse(error)
     ? {
-        title: error.status === 404 ? 'That page does not exist' : `Error ${String(error.status)}`,
-        detail:
+        title:
           error.status === 404
-            ? 'The link may be out of date, or the trip it pointed to was deleted.'
-            : error.statusText,
+            ? t('errors.routeMissing')
+            : t('errors.status', { status: error.status }),
+        detail: error.status === 404 ? t('errors.routeMissingBody') : error.statusText,
       }
-    : {
-        title: 'Something broke on our side',
-        detail: 'This route failed to load. Your saved trips are untouched.',
-      };
+    : { title: t('errors.routeBroken'), detail: t('errors.routeBrokenBody') };
 
   return (
     <ErrorShell title={title} detail={detail} error={error}>
@@ -40,13 +39,13 @@ export function RouteErrorBoundary(): React.ReactElement {
           window.location.reload();
         }}
       >
-        Reload
+        {t('common.reload')}
       </Button>
       <Link
         to="/"
         className="inline-flex h-11 items-center rounded-md border border-default bg-surface px-5 text-body font-medium text-primary transition-colors hover:bg-surface-hover"
       >
-        Back to home
+        {t('common.backHome')}
       </Link>
     </ErrorShell>
   );
@@ -88,39 +87,49 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
 
     return (
       <ErrorShell
-        title="This section stopped responding"
-        detail="The rest of the app is still fine. Try again, or head back to the planner."
+        titleKey="errors.sectionBroken"
+        detailKey="errors.sectionBrokenBody"
         error={error}
       >
-        <Button
-          onClick={() => {
+        <ResetButton
+          onReset={() => {
             this.setState({ error: null });
           }}
-        >
-          Try again
-        </Button>
+        />
       </ErrorShell>
     );
   }
 }
 
+/**
+ * A class component cannot call hooks, so the boundary passes keys down and
+ * this shell — a function component — does the translating.
+ */
 function ErrorShell({
   title,
   detail,
+  titleKey,
+  detailKey,
   error,
   children,
 }: {
-  title: string;
-  detail: string;
+  title?: string;
+  detail?: string;
+  titleKey?: 'errors.sectionBroken';
+  detailKey?: 'errors.sectionBrokenBody';
   error: unknown;
   children: ReactNode;
 }): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <main className="grid min-h-[70svh] place-items-center px-6 py-20">
       <div className="w-full max-w-lg text-center">
-        <p className="eyebrow">Error</p>
-        <h1 className="mt-3 text-h1 text-primary">{title}</h1>
-        <p className="mx-auto mt-4 max-w-prose text-body text-secondary">{detail}</p>
+        <p className="eyebrow">{t('errors.eyebrow')}</p>
+        <h1 className="mt-3 text-h1 text-primary">{title ?? (titleKey ? t(titleKey) : '')}</h1>
+        <p className="mx-auto mt-4 max-w-prose text-body text-secondary">
+          {detail ?? (detailKey ? t(detailKey) : '')}
+        </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">{children}</div>
 
@@ -132,4 +141,10 @@ function ErrorShell({
       </div>
     </main>
   );
+}
+
+/** The reset control, split out so it can use a hook the boundary cannot. */
+function ResetButton({ onReset }: { onReset: () => void }): React.ReactElement {
+  const { t } = useTranslation();
+  return <Button onClick={onReset}>{t('common.tryAgain')}</Button>;
 }

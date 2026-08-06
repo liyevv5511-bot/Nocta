@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { GlassPanel } from '@/features/ui';
 import { transition } from '@/lib/motion';
@@ -29,13 +30,14 @@ export function GenerationStatus({
   progress,
   onCancel,
 }: GenerationStatusProps): React.ReactElement {
+  const { t } = useTranslation();
   const typed = useTypewriter(message);
 
   return (
     <GlassPanel radius="xl" className="p-6 sm:p-8">
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0 flex-1">
-          <p className="eyebrow">Generating</p>
+          <p className="eyebrow">{t('plan.generating')}</p>
 
           <p className="mt-2 min-h-[3.5rem] text-h3 text-primary sm:min-h-[2.5rem]">
             <AnimatePresence mode="wait" initial={false}>
@@ -63,7 +65,7 @@ export function GenerationStatus({
           onClick={onCancel}
           className="shrink-0 rounded-sm border border-default px-3.5 py-1.5 text-sm text-secondary transition-colors hover:border-strong hover:text-primary"
         >
-          Cancel
+          {t('plan.cancel')}
         </button>
       </div>
 
@@ -72,7 +74,7 @@ export function GenerationStatus({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(progress * 100)}
-        aria-label="Generation progress"
+        aria-label={t('plan.progress')}
         className="mt-6 h-1 overflow-hidden rounded-pill bg-surface-hover"
       >
         <motion.div

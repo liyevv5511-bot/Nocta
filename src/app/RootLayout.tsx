@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import { MagneticCursor } from '@/features/shell/MagneticCursor';
@@ -27,6 +28,7 @@ import { AppErrorBoundary } from './error-boundary';
  *     scroll-height jump mid-animation.
  */
 export function RootLayout(): React.ReactElement {
+  const { t } = useTranslation();
   const location = useLocation();
   const reducedMotion = usePrefersReducedMotion();
   useLenis();
@@ -53,7 +55,7 @@ export function RootLayout(): React.ReactElement {
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[var(--z-modal)] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-accent-contrast"
       >
-        Skip to content
+        {t('common.skipToContent')}
       </a>
 
       <SiteHeader />

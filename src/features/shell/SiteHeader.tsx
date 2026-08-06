@@ -1,16 +1,18 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import { ThemeToggle } from '@/features/theme/ThemeToggle';
+import { LanguageToggle } from '@/i18n/LanguageToggle';
 import { cn } from '@/lib/cn';
 import { transition } from '@/lib/motion';
 
 const NAV = [
-  { to: '/plan', label: 'Plan a trip' },
-  { to: '/route', label: 'Route' },
-  { to: '/saved', label: 'Saved' },
-  { to: '/styleguide', label: 'Styleguide' },
+  { to: '/plan', key: 'nav.plan' },
+  { to: '/route', key: 'nav.route' },
+  { to: '/saved', key: 'nav.saved' },
+  { to: '/styleguide', key: 'nav.styleguide' },
 ] as const;
 
 /**
@@ -22,6 +24,7 @@ const NAV = [
  * commits to React state.
  */
 export function SiteHeader(): React.ReactElement {
+  const { t } = useTranslation();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,11 +45,11 @@ export function SiteHeader(): React.ReactElement {
       style={{ zIndex: 'var(--z-header)' }}
     >
       <div className="container-content flex h-16 items-center justify-between gap-6">
-        <Link to="/" className="group flex items-center gap-2.5" aria-label="Nocta — home">
+        <Link to="/" className="group flex items-center gap-2.5" aria-label={t('nav.home')}>
           <Wordmark />
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+        <nav aria-label={t('nav.main')} className="hidden items-center gap-1 md:flex">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -60,7 +63,7 @@ export function SiteHeader(): React.ReactElement {
             >
               {({ isActive }) => (
                 <>
-                  {item.label}
+                  {t(item.key)}
                   {isActive ? (
                     <motion.span
                       layoutId="nav-underline"
@@ -75,19 +78,20 @@ export function SiteHeader(): React.ReactElement {
         </nav>
 
         <div className="flex items-center gap-2.5">
+          <LanguageToggle className="hidden md:inline-flex" />
           <ThemeToggle className="hidden sm:inline-flex" />
           <Link
             to="/plan"
             className="hidden h-9 items-center rounded-sm bg-accent px-3.5 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent-hover sm:inline-flex"
           >
-            Start planning
+            {t('nav.startPlanning')}
           </Link>
 
           <button
             type="button"
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             onClick={() => {
               setMenuOpen((open) => !open);
             }}
@@ -114,7 +118,10 @@ export function SiteHeader(): React.ReactElement {
             transition={transition.base}
             className="overflow-hidden border-t border-subtle bg-canvas md:hidden"
           >
-            <nav aria-label="Mobile" className="container-content flex flex-col gap-1 py-4">
+            <nav
+              aria-label={t('nav.mobile')}
+              className="container-content flex flex-col gap-1 py-4"
+            >
               {NAV.map((item) => (
                 <NavLink
                   key={item.to}
@@ -129,11 +136,11 @@ export function SiteHeader(): React.ReactElement {
                     )
                   }
                 >
-                  {item.label}
+                  {t(item.key)}
                 </NavLink>
               ))}
-              <div className="mt-3 flex items-center justify-between border-t border-subtle pt-4">
-                <span className="text-sm text-tertiary">Theme</span>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-subtle pt-4">
+                <LanguageToggle />
                 <ThemeToggle />
               </div>
             </nav>

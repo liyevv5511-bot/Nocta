@@ -1,22 +1,18 @@
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { CITIES } from '@/data/cities';
 import { Button, Chip, GlassPanel, Slider } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { cn } from '@/lib/cn';
 import { formatCurrency } from '@/lib/format';
 import { SPRING } from '@/lib/motion';
-import { PACES, type Pace } from '@/types/itinerary';
+import { PACES } from '@/types/itinerary';
 
 import { DestinationCombobox } from './DestinationCombobox';
 import { MOOD_META, MOOD_ORDER } from './kinds';
 import { usePlanStore } from './plan.store';
-
-const PACE_COPY: Record<Pace, { label: string; detail: string }> = {
-  relaxed: { label: 'Relaxed', detail: '4 stops a day' },
-  balanced: { label: 'Balanced', detail: '5 stops a day' },
-  intense: { label: 'Intense', detail: '6 stops a day' },
-};
 
 const MAX_DAYS = 7;
 
@@ -30,6 +26,8 @@ const MAX_DAYS = 7;
  * product cannot keep.
  */
 export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const draft = usePlanStore((state) => state.draft);
   const setDraft = usePlanStore((state) => state.setDraft);
   const toggleMood = usePlanStore((state) => state.toggleMood);
@@ -64,7 +62,7 @@ export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactEle
 
       {/* ----------------------------------------------------------- Days */}
       <fieldset className="mt-8">
-        <legend className="text-sm font-medium text-secondary">How many days?</legend>
+        <legend className="text-sm font-medium text-secondary">{t('plan.daysLabel')}</legend>
         <div className="mt-3 grid grid-cols-7 gap-2">
           {Array.from({ length: MAX_DAYS }, (_, index) => index + 1).map((count) => (
             <button
@@ -98,7 +96,7 @@ export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactEle
       {/* ---------------------------------------------------------- Moods */}
       <fieldset className="mt-8">
         <legend className="text-sm font-medium text-secondary">
-          What kind of trip? <span className="text-tertiary">(pick up to four)</span>
+          {t('plan.moodsLabel')} <span className="text-tertiary">{t('plan.moodsHint')}</span>
         </legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {MOOD_ORDER.map((mood) => (
@@ -110,19 +108,19 @@ export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactEle
               }}
               icon={<span aria-hidden="true">{MOOD_META[mood].icon}</span>}
             >
-              {MOOD_META[mood].label}
+              {t(MOOD_META[mood].labelKey)}
             </Chip>
           ))}
         </div>
         <p className="mt-2.5 text-sm text-tertiary">
-          {MOOD_META[draft.moods[0] ?? 'food'].description}
+          {t(MOOD_META[draft.moods[0] ?? 'food'].descriptionKey)}
         </p>
       </fieldset>
 
       {/* --------------------------------------------------------- Budget */}
       <div className="mt-8">
         <Slider
-          label="Daily budget, per person"
+          label={t('plan.budgetLabel')}
           min={40}
           max={400}
           step={10}
@@ -130,17 +128,17 @@ export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactEle
           onChange={(budgetPerDay) => {
             setDraft({ budgetPerDay });
           }}
-          displayValue={formatCurrency(draft.budgetPerDay, matched?.currency ?? 'EUR')}
+          displayValue={formatCurrency(draft.budgetPerDay, matched?.currency ?? 'EUR', locale)}
           scale={['€40', '€220', '€400']}
         />
       </div>
 
       {/* ----------------------------------------------------------- Pace */}
       <fieldset className="mt-8">
-        <legend className="text-sm font-medium text-secondary">Pace</legend>
+        <legend className="text-sm font-medium text-secondary">{t('plan.paceLabel')}</legend>
         <div
           role="radiogroup"
-          aria-label="Pace"
+          aria-label={t('plan.paceLabel')}
           className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-subtle bg-surface-sunken p-1"
         >
           {PACES.map((pace) => (
@@ -164,9 +162,9 @@ export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactEle
                   className="absolute inset-0 rounded-md bg-surface shadow-sm"
                 />
               ) : null}
-              <span className="relative block text-sm font-medium">{PACE_COPY[pace].label}</span>
+              <span className="relative block text-sm font-medium">{t(`pace.${pace}`)}</span>
               <span className="relative mt-0.5 block text-xs text-tertiary">
-                {PACE_COPY[pace].detail}
+                {t(`pace.${pace}Detail`)}
               </span>
             </button>
           ))}
@@ -174,7 +172,9 @@ export function PlanForm({ onSubmit }: { onSubmit: () => void }): React.ReactEle
       </fieldset>
 
       <Button type="submit" size="lg" fullWidth className="mt-8" disabled={!canSubmit}>
-        {canSubmit ? `Build ${String(draft.days)} days in ${matched.name}` : 'Choose a destination'}
+        {canSubmit
+          ? t('plan.submit', { count: draft.days, city: matched.name })
+          : t('plan.submitDisabled')}
       </Button>
     </GlassPanel>
   );

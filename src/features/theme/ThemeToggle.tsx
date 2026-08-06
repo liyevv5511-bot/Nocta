@@ -1,14 +1,19 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/cn';
 import { SPRING } from '@/lib/motion';
 
 import { useThemeStore, type ThemePreference } from './theme.store';
 
-const OPTIONS: { value: ThemePreference; label: string; icon: React.ReactNode }[] = [
-  { value: 'light', label: 'Light', icon: <IconSun /> },
-  { value: 'system', label: 'System', icon: <IconSystem /> },
-  { value: 'dark', label: 'Dark', icon: <IconMoon /> },
+const OPTIONS: {
+  value: ThemePreference;
+  key: 'theme.light' | 'theme.system' | 'theme.dark';
+  icon: React.ReactNode;
+}[] = [
+  { value: 'light', key: 'theme.light', icon: <IconSun /> },
+  { value: 'system', key: 'theme.system', icon: <IconSystem /> },
+  { value: 'dark', key: 'theme.dark', icon: <IconMoon /> },
 ];
 
 /**
@@ -23,13 +28,14 @@ const OPTIONS: { value: ThemePreference; label: string; icon: React.ReactNode }[
  * selected pill travels via `layoutId` rather than a background transition.
  */
 export function ThemeToggle({ className }: { className?: string }): React.ReactElement {
+  const { t } = useTranslation();
   const preference = useThemeStore((state) => state.preference);
   const setPreference = useThemeStore((state) => state.setPreference);
 
   return (
     <div
       role="radiogroup"
-      aria-label="Colour theme"
+      aria-label={t('theme.label')}
       className={cn(
         'relative inline-flex items-center gap-0.5 rounded-pill border border-subtle bg-surface-sunken p-0.5',
         className,
@@ -43,8 +49,8 @@ export function ThemeToggle({ className }: { className?: string }): React.ReactE
             type="button"
             role="radio"
             aria-checked={isActive}
-            aria-label={`${option.label} theme`}
-            title={`${option.label} theme`}
+            aria-label={t(option.key)}
+            title={t(option.key)}
             onClick={() => {
               setPreference(option.value);
             }}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
 import { Seo } from '@/app/Seo';
@@ -5,6 +6,7 @@ import { ogImageUrl } from '@/config/site';
 import { CITIES, CITY_BY_ID } from '@/data/cities';
 import { getCityVenues } from '@/data/venues';
 import { Chip, GlassPanel, Photo } from '@/features/ui';
+import { useLocale } from '@/i18n/useLocale';
 import { formatCurrency, formatList } from '@/lib/format';
 import type { City } from '@/types/city';
 
@@ -20,6 +22,8 @@ import { NotFound } from './NotFound';
  * the city rather than as the generic product card.
  */
 export function Destination(): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const { cityId } = useParams<{ cityId: string }>();
   const city = cityId === undefined ? undefined : CITY_BY_ID.get(cityId);
 
@@ -40,9 +44,9 @@ export function Destination(): React.ReactElement {
       />
 
       <article className="container-content py-14 lg:py-20">
-        <nav aria-label="Breadcrumb" className="mb-8">
+        <nav aria-label={t('destination.breadcrumb')} className="mb-8">
           <Link to="/" className="text-sm text-tertiary transition-colors hover:text-primary">
-            ← All destinations
+            {t('destination.allDestinations')}
           </Link>
         </nav>
 
@@ -66,7 +70,7 @@ export function Destination(): React.ReactElement {
               data-magnetic
               className="mt-9 inline-flex h-14 items-center rounded-lg bg-accent px-7 text-body-lg font-medium text-accent-contrast transition-colors hover:bg-accent-hover"
             >
-              Plan {city.name}
+              {t('destination.planCity', { city: city.name })}
             </Link>
           </div>
 
@@ -85,31 +89,34 @@ export function Destination(): React.ReactElement {
         <GlassPanel radius="xl" className="mt-14 p-6 sm:p-8">
           <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <Figure
-              label="Average day"
-              value={formatCurrency(city.avgDailyCost, city.currency)}
-              note="per person, all in"
+              label={t('destination.averageDay')}
+              value={formatCurrency(city.avgDailyCost, city.currency, locale)}
+              note={t('destination.averageDayNote')}
             />
             <Figure
-              label="Typical high"
+              label={t('destination.typicalHigh')}
               value={`${String(Math.round(city.temperatureC))}°C`}
               note={city.weatherSummary}
             />
             <Figure
-              label="Best seasons"
-              value={capitalise(city.bestSeasons[0] ?? 'spring')}
-              note={formatList(city.bestSeasons)}
+              label={t('destination.bestSeasons')}
+              value={t(`seasons.${city.bestSeasons[0] ?? 'spring'}`)}
+              note={formatList(
+                city.bestSeasons.map((season) => t(`seasons.${season}`)),
+                locale,
+              )}
             />
             <Figure
-              label="In the catalogue"
+              label={t('destination.inCatalogue')}
               value={String(venueCount)}
-              note={`venues · ${String(dayTripCount)} day trips`}
+              note={t('destination.inCatalogueNote', { count: dayTripCount })}
             />
           </dl>
         </GlassPanel>
 
         <section aria-labelledby="highlights-heading" className="mt-16">
           <h2 id="highlights-heading" className="text-h1 text-primary">
-            Three things worth building a day around
+            {t('destination.highlights')}
           </h2>
 
           <ul className="mt-8 grid gap-5 lg:grid-cols-3">
@@ -126,7 +133,7 @@ export function Destination(): React.ReactElement {
 
         <section aria-labelledby="others-heading" className="mt-20">
           <h2 id="others-heading" className="eyebrow">
-            Other destinations
+            {t('destination.others')}
           </h2>
           <ul className="mt-4 flex flex-wrap gap-2">
             {CITIES.filter((other) => other.id !== city.id).map((other) => (
@@ -197,8 +204,4 @@ function Figure({
       </dd>
     </div>
   );
-}
-
-function capitalise(value: string): string {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }

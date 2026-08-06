@@ -1,6 +1,8 @@
 import { useId, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { CITIES, searchCities } from '@/data/cities';
+import { useLocale } from '@/i18n/useLocale';
 import { formatCurrency } from '@/lib/format';
 import type { City } from '@/types/city';
 
@@ -28,6 +30,8 @@ export function DestinationCombobox({
   onChange,
   matched,
 }: DestinationComboboxProps): React.ReactElement {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const inputId = useId();
   const listId = useId();
@@ -38,7 +42,7 @@ export function DestinationCombobox({
   return (
     <div className="relative">
       <label htmlFor={inputId} className="text-sm font-medium text-secondary">
-        Where are you going?
+        {t('plan.destinationLabel')}
       </label>
 
       <input
@@ -48,7 +52,7 @@ export function DestinationCombobox({
         aria-controls={listId}
         aria-autocomplete="list"
         autoComplete="off"
-        placeholder="Lisbon, Tokyo, Reykjavík…"
+        placeholder={t('plan.destinationPlaceholder')}
         value={value}
         onChange={(event) => {
           onChange(event.target.value);
@@ -88,7 +92,10 @@ export function DestinationCombobox({
             >
               <span className="font-medium text-primary">{city.name}</span>
               <span className="text-sm text-tertiary">
-                {city.country} · {formatCurrency(city.avgDailyCost, city.currency)}/day
+                {city.country} ·{' '}
+                {t('common.perDay', {
+                  amount: formatCurrency(city.avgDailyCost, city.currency, locale),
+                })}
               </span>
             </button>
           ))}
@@ -97,7 +104,7 @@ export function DestinationCombobox({
 
       {showMiss ? (
         <p className="mt-2 text-sm text-warning">
-          No venue catalogue for “{value}”. Pick one of the {CITIES.length} cities above.
+          {t('plan.noCatalogue', { query: value, count: CITIES.length })}
         </p>
       ) : null}
     </div>
